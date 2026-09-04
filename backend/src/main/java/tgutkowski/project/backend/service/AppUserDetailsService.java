@@ -3,6 +3,7 @@ package tgutkowski.project.backend.service;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.model.entities.AppUser;
@@ -11,9 +12,9 @@ import tgutkowski.project.backend.repository.AppUserRepository;
 import java.util.Optional;
 
 @Service
-public class AppUserDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
+public class AppUserDetailsService implements UserDetailsService {
 
-    private AppUserRepository appUserRepository;
+    private final AppUserRepository appUserRepository;
 
     public AppUserDetailsService(AppUserRepository appUserRepository) {
         this.appUserRepository = appUserRepository;
