@@ -35,7 +35,9 @@ public class AuthController {
         String username = registrationRequest.username();
         String password = registrationRequest.password();
 
-        return ResponseEntity.ok(authService.register(username, password));
+        String message = authService.register(username, password);
+
+        return ResponseEntity.ok(message);
     }
 
 

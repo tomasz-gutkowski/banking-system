@@ -27,11 +27,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
-    //unexpected
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred", request);
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ExceptionResponse> handleConflict(ConflictException e, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, e.getMessage(), request);
     }
+
+//    //unexpected
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {
+//        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred", request);
+//    }
 
     private ResponseEntity<ExceptionResponse> build(
             HttpStatus status, String message, HttpServletRequest request) {

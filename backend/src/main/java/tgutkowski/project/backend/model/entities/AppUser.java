@@ -1,6 +1,7 @@
 package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
+import tgutkowski.project.backend.model.entities.enums.Roles;
 
 @Entity
 public class AppUser {

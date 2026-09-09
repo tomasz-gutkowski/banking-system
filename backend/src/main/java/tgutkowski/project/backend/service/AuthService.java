@@ -4,11 +4,13 @@ package tgutkowski.project.backend.service;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.model.entities.AppUser;
-import tgutkowski.project.backend.model.entities.Roles;
+import tgutkowski.project.backend.model.entities.enums.Roles;
 import tgutkowski.project.backend.repository.AppUserRepository;
 import tgutkowski.project.backend.service.jwt.JwtUtil;
 
@@ -33,6 +35,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
+
     public String authenticate(String username, String password) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         UserDetails userDetails = appUserDetailsService.loadUserByUsername(username);
@@ -42,7 +45,7 @@ public class AuthService {
     public String register(String username, String password) throws InvalidArgumentException {
         AppUser appUser = new AppUser();
         if (appUserRepository.findByUsername(username).isPresent()) {
-            throw new InvalidArgumentException("Username already taken");
+            throw new ConflictException("Username already taken");
         }
         appUser.setUsername(username);
         appUser.setPassword(passwordEncoder.encode(password));
