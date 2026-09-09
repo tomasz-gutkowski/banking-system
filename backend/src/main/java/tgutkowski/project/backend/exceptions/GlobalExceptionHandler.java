@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, e.getMessage(), request);
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleResourceNotFound(ResourceNotFoundException e, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
+    }
+
 //    //unexpected
 //    @ExceptionHandler(Exception.class)
 //    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {

@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 
-import javax.swing.plaf.synth.SynthTreeUI;
 import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {

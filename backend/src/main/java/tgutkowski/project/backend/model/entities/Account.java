@@ -3,8 +3,6 @@ package tgutkowski.project.backend.model.entities;
 import jakarta.persistence.*;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
 
-import java.util.List;
-
 @Entity
 public class Account {
     @Id
@@ -21,6 +19,10 @@ public class Account {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
 
     public void setOwner(AppUser owner) {
         this.owner = owner;
