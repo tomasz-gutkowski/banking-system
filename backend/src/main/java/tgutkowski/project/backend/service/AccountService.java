@@ -1,5 +1,6 @@
 package tgutkowski.project.backend.service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class AccountService {
         this.appUserRepository = appUserRepository;
     }
 
+    @Transactional
     public String createAccount(UserDetails userDetails) throws ConflictException {
         String username = userDetails.getUsername();
         if(accountRepository.existsByOwnerUsername(username)) throw new ConflictException("Account already exists");

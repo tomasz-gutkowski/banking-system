@@ -37,6 +37,15 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ExceptionResponse> handleInsufficientBalance(InsufficientBalanceException e, HttpServletRequest request) {
+        return build(HttpStatus.PAYMENT_REQUIRED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(AccountNotEligibleException.class)
+    public ResponseEntity<ExceptionResponse> handleAccountNotEligible(AccountNotEligibleException e, HttpServletRequest request) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, e.getMessage(), request);
+    }
 //    //unexpected
 //    @ExceptionHandler(Exception.class)
 //    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {

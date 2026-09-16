@@ -2,6 +2,7 @@ package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
+import tgutkowski.project.backend.model.entities.enums.AccountType;
 
 @Entity
 public class Account {
@@ -20,8 +21,20 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AccountType type;
+
     public String getAccountNumber() {
-        return accountNumber;
+        return this.accountNumber;
+    }
+
+    public AccountStatus getAccountStatus() {
+        return this.status;
+    }
+
+    public AccountType getAccountType() {
+        return this.type;
     }
 
     public void setOwner(AppUser owner) {

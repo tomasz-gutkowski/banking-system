@@ -1,6 +1,7 @@
 package tgutkowski.project.backend.service;
 
 
+import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,6 +42,7 @@ public class AuthService {
         return jwtUtil.generateToken(userDetails);
     }
 
+    @Transactional
     public String register(String username, String password) throws InvalidArgumentException {
         AppUser appUser = new AppUser();
         if (appUserRepository.findByUsername(username).isPresent()) {
