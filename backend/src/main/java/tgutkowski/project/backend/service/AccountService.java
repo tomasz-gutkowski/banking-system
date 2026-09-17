@@ -8,6 +8,7 @@ import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
+import tgutkowski.project.backend.model.entities.enums.AccountType;
 import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
@@ -37,6 +38,7 @@ public class AccountService {
         account.setOwner(owner);
         account.setAccountNumber(generateUniqueAccountNumber());
         account.setStatus(AccountStatus.ACTIVE);
+        account.setType(AccountType.USER);
         accountRepository.save(account);
     }
 

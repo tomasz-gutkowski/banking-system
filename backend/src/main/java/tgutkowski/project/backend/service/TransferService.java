@@ -2,10 +2,13 @@ package tgutkowski.project.backend.service;
 
 import jakarta.transaction.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
+import tgutkowski.project.backend.model.dtos.responses.TransferDto;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.Transfer;
@@ -85,6 +88,18 @@ public class TransferService {
         if(!receiver.getAccountStatus().equals(AccountStatus.ACTIVE))
             throw new AccountNotEligibleException("Sender account is not active");
 
+    }
+
+    @Transactional
+    public Page<TransferDto> getTransfers(String username, Pageable pageable) {
+        Account account = accountRepository.findByOwnerUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user"));
+        if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new AccountNotEligibleException("Account is closed");
+
+        String accNum = account.getAccountNumber();
+        Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(accNum, pageable);
+
+        return transfers.map(TransferDto::from);
     }
 
 }

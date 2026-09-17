@@ -23,11 +23,36 @@ public class Transfer {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    public Long getId() {
+        return id;
+    }
+
+    public Account getSender() {
+        return sender;
+    }
+
+    public Account getReceiver() {
+        return receiver;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public TransferStatus getStatus() {
+        return status;
+    }
+
     @Column(nullable = false)
     private LocalDateTime date;
 
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
+
 
     public void setSender(Account sender) {
         this.sender = sender;

@@ -48,4 +48,8 @@ public class Account {
     public void setStatus(AccountStatus status) {
         this.status = status;
     }
+
+    public void setType(AccountType type) {
+        this.type = type;
+    }
 }
