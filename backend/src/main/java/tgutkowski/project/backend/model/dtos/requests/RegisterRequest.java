@@ -3,9 +3,9 @@ package tgutkowski.project.backend.model.dtos.requests;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record RegistrationRequest(
+public record RegisterRequest(
         @NotBlank(message = "Username cannot be empty")
-        @Size(min = 3, max=30, message = "Username must be 3-50 characters")
+        @Size(min = 3, max=30, message = "Username must be 3-30 characters")
         String username,
 
         @NotBlank(message = "Password cannot be empty")

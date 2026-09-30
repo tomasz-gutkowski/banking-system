@@ -19,7 +19,7 @@ public class GlobalExceptionHandler {
         e.getBindingResult().getFieldErrors().forEach(error -> {
             errors.put(error.getField(), error.getDefaultMessage());
         });
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.unprocessableContent().body(errors);
     }
 
     @ExceptionHandler(InvalidArgumentException.class)
@@ -45,6 +45,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccountNotEligibleException.class)
     public ResponseEntity<ExceptionResponse> handleAccountNotEligible(AccountNotEligibleException e, HttpServletRequest request) {
         return build(HttpStatus.METHOD_NOT_ALLOWED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ExceptionResponse> handleInvalidCredentials(InvalidCredentialsException e, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
     }
 //    //unexpected
 //    @ExceptionHandler(Exception.class)

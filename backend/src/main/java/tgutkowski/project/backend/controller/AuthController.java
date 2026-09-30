@@ -1,13 +1,16 @@
 package tgutkowski.project.backend.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.boot.jackson.autoconfigure.JacksonProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.LoginRequest;
-import tgutkowski.project.backend.model.dtos.requests.RegistrationRequest;
+import tgutkowski.project.backend.model.dtos.requests.RegisterRequest;
+import tgutkowski.project.backend.model.dtos.responses.LoginResponse;
+import tgutkowski.project.backend.model.dtos.responses.RegisterResponse;
 import tgutkowski.project.backend.service.AuthService;
 
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -20,24 +23,27 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.username();
         String password = loginRequest.password();
 
         String token = authService.authenticate(username, password);
+        String message = "Logged in successfully";
 
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(new LoginResponse(message, token));
     }
 
 
     @PostMapping("/register")
-    public ResponseEntity<String> postUserRegistration(@Valid @RequestBody RegistrationRequest registrationRequest) {
-        String username = registrationRequest.username();
-        String password = registrationRequest.password();
+    public ResponseEntity<RegisterResponse> postUserRegistration(@Valid @RequestBody RegisterRequest registerRequest) {
+        String username = registerRequest.username();
+        String password = registerRequest.password();
 
-        String message = authService.register(username, password);
+        authService.register(username, password);
 
-        return ResponseEntity.ok(message);
+        String message = "Account created successfully";
+
+        return ResponseEntity.ok(new RegisterResponse(message));
     }
 
 
