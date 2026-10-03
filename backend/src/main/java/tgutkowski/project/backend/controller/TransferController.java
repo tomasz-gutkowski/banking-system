@@ -9,7 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.TransferRequest;
-import tgutkowski.project.backend.model.dtos.responses.TransferDto;
+import tgutkowski.project.backend.model.dtos.responses.TransferInfoDto;
+import tgutkowski.project.backend.model.dtos.responses.TransferResponse;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.service.TransferService;
 
@@ -31,20 +32,23 @@ public class TransferController {
         return ResponseEntity.ok(balance);
     }
 
-    @PostMapping("/send")
-    public ResponseEntity<String> sendTo(@AuthenticationPrincipal AppUser appUser, @Valid @RequestBody TransferRequest request) {
-        String senderUsername = appUser.getUsername();
+    @PostMapping("/transfer")
+    public ResponseEntity<TransferResponse> transferTo(@AuthenticationPrincipal AppUser appUser,
+                                             @Valid @RequestBody TransferRequest request) {
+        String senderAccNum = request.sender();
         String receiverAccNum = request.receiver();
         BigDecimal amount = request.amount();
-        String message = transferService.transferMoney(senderUsername, receiverAccNum, amount);
-        return ResponseEntity.ok(message);
+        String id = transferService.transferMoney(appUser, senderAccNum, receiverAccNum, amount);
+        String message = "Transfer completed successfully";
+
+        return ResponseEntity.ok(new TransferResponse(id, senderAccNum, receiverAccNum, amount, message));
     }
 
 
     @GetMapping("/transfers")
-    public Page<TransferDto> getTransfers(@AuthenticationPrincipal AppUser appUser,
-                                          @RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "10")int size) {
+    public Page<TransferInfoDto> getTransfers(@AuthenticationPrincipal AppUser appUser,
+                                              @RequestParam(defaultValue = "0") int page,
+                                              @RequestParam(defaultValue = "10")int size) {
         int sizeCapped = Math.min(size, 20);
 
         String username = appUser.getUsername();

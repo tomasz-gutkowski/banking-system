@@ -13,7 +13,8 @@ const styles = {
 function UserPanel() {
 
 
-    return (<div>
+    return (<div className={styles.page}>
+
         </div>)
 }
 

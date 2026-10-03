@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
-import tgutkowski.project.backend.model.dtos.responses.TransferDto;
+import tgutkowski.project.backend.model.dtos.responses.TransferInfoDto;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.Transfer;
@@ -32,8 +32,9 @@ public class TransferService {
         this.accountRepository = accountRepository;
     }
 
+    @Transactional
     public BigDecimal getBalance(AppUser appUser) {
-        Account acc = accountRepository.findByOwner(appUser)
+        Account acc = accountRepository.findByOwnerLocking(appUser)
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the user"));
 
         String accNum = acc.getAccountNumber();
@@ -42,13 +43,14 @@ public class TransferService {
     }
 
     @Transactional
-    public String transferMoney(String senderUsername, String receiverAccNum, BigDecimal amount) {
-        Account senderAcc = accountRepository.findByOwnerUsernameLocking(senderUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user"));
+    public String transferMoney(AppUser sender, String senderAccNum, String receiverAccNum, BigDecimal amount) {
+        Account senderAcc = accountRepository.findByOwnerLocking(sender)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender number"));
         Account receiverAcc = accountRepository.findByAccountNumberLocking(receiverAccNum)
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver number"));
 
-        String senderAccNum = senderAcc.getAccountNumber();
+        if(!senderAcc.getAccountNumber().equals(senderAccNum)) throw new ResourceNotFoundException("No such account exists for an user");
+
         BigDecimal senderBalance =  balanceFromAccNum(senderAccNum);
 
         verifyTransfer(senderAcc, receiverAcc, senderBalance, amount);
@@ -61,7 +63,8 @@ public class TransferService {
         transfer.setStatus(TransferStatus.COMPLETED);
         transferRepository.save(transfer);
 
-        return "Transfer completed successfully";
+        //TODO: currently returning transaction ID from database, but independent transaction identifier would work better
+        return transfer.getId().toString();
     }
 
     private BigDecimal balanceFromAccNum(String accNum){
@@ -91,7 +94,7 @@ public class TransferService {
     }
 
     @Transactional
-    public Page<TransferDto> getTransfers(String username, Pageable pageable) {
+    public Page<TransferInfoDto> getTransfers(String username, Pageable pageable) {
         Account account = accountRepository.findByOwnerUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the user"));
         if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new AccountNotEligibleException("Account is closed");
@@ -99,7 +102,7 @@ public class TransferService {
         String accNum = account.getAccountNumber();
         Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(accNum, pageable);
 
-        return transfers.map(TransferDto::from);
+        return transfers.map(TransferInfoDto::from);
     }
 
 }

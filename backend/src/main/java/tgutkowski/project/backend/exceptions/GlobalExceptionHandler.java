@@ -51,6 +51,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ExceptionResponse> handleInvalidCredentials(InvalidCredentialsException e, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
     }
+
+    @ExceptionHandler(NotPermittedException.class)
+    public ResponseEntity<ExceptionResponse> handleNotPermitted(NotPermittedException e, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, e.getMessage(), request);
+    }
 //    //unexpected
 //    @ExceptionHandler(Exception.class)
 //    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {

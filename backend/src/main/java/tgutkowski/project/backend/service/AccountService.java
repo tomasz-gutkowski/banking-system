@@ -5,6 +5,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.ConflictException;
+import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
+import tgutkowski.project.backend.model.dtos.responses.AccountStatusResponse;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
@@ -12,6 +14,8 @@ import tgutkowski.project.backend.model.entities.enums.AccountType;
 import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -25,21 +29,31 @@ public class AccountService {
     }
 
     @Transactional
-    public String createAccount(UserDetails userDetails) throws ConflictException {
-        String username = userDetails.getUsername();
-        if(accountRepository.existsByOwnerUsername(username)) throw new ConflictException("Account already exists");
-        AppUser user = appUserRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
-        buildAccount(user);
-        return "Account created successfully";
+    public String createAccount(AppUser user) throws ConflictException {
+        String username = user.getUsername();
+
+        //LOCK QUERY
+        AppUser owner = appUserRepository.findByUsernameLocking(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+
+        List<AccountStatus> accountStatuses = List.of(AccountStatus.ACTIVE, AccountStatus.FROZEN);
+        if(accountRepository.existsByOwner(owner, accountStatuses))
+            throw new ConflictException("Account already exists");
+
+        Account account = buildAccount(owner);
+
+        accountRepository.save(account);
+
+        return account.getAccountNumber();
     }
 
-    private void buildAccount(AppUser owner) {
+    private Account buildAccount(AppUser owner) {
         Account account = new Account();
         account.setOwner(owner);
         account.setAccountNumber(generateUniqueAccountNumber());
         account.setStatus(AccountStatus.ACTIVE);
         account.setType(AccountType.USER);
-        accountRepository.save(account);
+        return account;
     }
 
     private String generateUniqueAccountNumber(){
@@ -58,5 +72,21 @@ public class AccountService {
             sb.append(random.nextInt(10));
         }
         return sb.toString();
+    }
+
+    @Transactional
+    public List<AccountStatusResponse> getAccountsStatusList(AppUser user){
+        List<Account> accounts = accountRepository.findAllByOwner(user);
+        return accounts.stream()
+                .map(a -> new AccountStatusResponse(a.getAccountNumber(), a.getAccountStatus()))
+                .toList();
+    }
+
+    @Transactional
+    public AccountStatusResponse getAccountStatus(AppUser user, String accountNumber){
+        Account account = accountRepository.findByOwnerAndAccountNumber(user, accountNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
+
+        return new AccountStatusResponse(account.getAccountNumber(), account.getAccountStatus());
     }
 }

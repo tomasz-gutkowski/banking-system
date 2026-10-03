@@ -6,7 +6,7 @@ import tgutkowski.project.backend.model.entities.enums.TransferStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record TransferDto(
+public record TransferInfoDto(
         Long id,
         String senderNumber,
         String receiverNumber,
@@ -15,8 +15,8 @@ public record TransferDto(
         TransferStatus status
 )
 {
-    public static TransferDto from(Transfer transfer){
-        return new TransferDto(
+    public static TransferInfoDto from(Transfer transfer){
+        return new TransferInfoDto(
                 transfer.getId(),
                 transfer.getSender().getAccountNumber(),
                 transfer.getReceiver().getAccountNumber(),
