@@ -10,10 +10,6 @@ public record TransferRequest(
     @Digits(integer = 12 , fraction = 0, message = "Amount format is invalid")
     BigDecimal amount,
 
-    @NotBlank(message = "Sender is required")
-    @Pattern(regexp = "^ACC-\\d{8}$", message = "Not an eligible account number")
-    String sender,
-
     @NotBlank(message = "Receiver is required")
     @Pattern(regexp = "^ACC-\\d{8}$", message = "Not an eligible account number")
     String receiver

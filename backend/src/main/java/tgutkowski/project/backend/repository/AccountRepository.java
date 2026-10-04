@@ -15,19 +15,21 @@ import java.util.Optional;
 public interface AccountRepository extends JpaRepository<Account, Integer> {
     Optional<Account> findByOwner(AppUser owner);
     Optional<Account> findByOwnerUsername(String username);
-    Optional<Account> findByOwnerAndAccountNumber(AppUser owner, String accountNumber);
+    Optional<Account> findByOwnerAndAccountId(AppUser owner, String accountId);
 
-    boolean existsByAccountNumber(String accountNumber);
+    boolean existsByAccountId(String accountId);
 
     List<Account> findAllByOwner(AppUser owner);
+
+    boolean existsByOwnerAndAccountId(AppUser owner, String accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Account a WHERE a.owner = :owner")
     Optional<Account> findByOwnerLocking(@Param("owner") AppUser owner);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT a FROM Account a WHERE a.accountNumber = :accountNumber")
-    Optional<Account> findByAccountNumberLocking(@Param("accountNumber") String accountNumber);
+    @Query("SELECT a FROM Account a WHERE a.accountId = :accountId")
+    Optional<Account> findByAccountNumberLocking(@Param("accountId") String accountId);
 
     @Query("SELECT COUNT(a) > 0 FROM Account a WHERE a.owner = :owner AND a.status IN :statuses")
     boolean existsByOwner(@Param("owner") AppUser owner,

@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.model.dtos.responses;
+package tgutkowski.project.backend.model.dtos.responses.transfer;
 
 import tgutkowski.project.backend.model.entities.Transfer;
 import tgutkowski.project.backend.model.entities.enums.TransferStatus;
@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 public record TransferInfoDto(
         Long id,
-        String senderNumber,
-        String receiverNumber,
+        String senderAccountId,
+        String receiverAccountId,
         BigDecimal amount,
         LocalDateTime date,
         TransferStatus status
@@ -18,8 +18,8 @@ public record TransferInfoDto(
     public static TransferInfoDto from(Transfer transfer){
         return new TransferInfoDto(
                 transfer.getId(),
-                transfer.getSender().getAccountNumber(),
-                transfer.getReceiver().getAccountNumber(),
+                transfer.getSender().getAccountId(),
+                transfer.getReceiver().getAccountId(),
                 transfer.getAmount(),
                 transfer.getDate(),
                 transfer.getStatus()

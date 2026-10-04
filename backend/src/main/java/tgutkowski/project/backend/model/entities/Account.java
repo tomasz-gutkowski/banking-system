@@ -11,7 +11,7 @@ public class Account {
     private Long id;
 
     @Column(unique = true, nullable = false, updatable = false)
-    private String accountNumber;
+    private String accountId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false, unique = true)
@@ -25,8 +25,8 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountType type;
 
-    public String getAccountNumber() {
-        return this.accountNumber;
+    public String getAccountId() {
+        return this.accountId;
     }
 
     public AccountStatus getAccountStatus() {
@@ -41,8 +41,8 @@ public class Account {
         this.owner = owner;
     }
 
-    public void  setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public void setStatus(AccountStatus status) {

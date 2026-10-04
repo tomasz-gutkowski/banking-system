@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.model.dtos.responses;
+package tgutkowski.project.backend.model.dtos.responses.account;
 
 public record AccountCreateResponse(
         String accountNumber,

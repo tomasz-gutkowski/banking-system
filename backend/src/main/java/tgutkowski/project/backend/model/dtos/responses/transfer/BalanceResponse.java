@@ -1,8 +1,8 @@
-package tgutkowski.project.backend.model.dtos.responses;
+package tgutkowski.project.backend.model.dtos.responses.transfer;
 
 import java.math.BigDecimal;
 
 public record BalanceResponse(
-        String username,
+        String accountId,
         BigDecimal balance
 ) {}

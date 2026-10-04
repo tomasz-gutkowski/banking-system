@@ -1,13 +1,11 @@
 package tgutkowski.project.backend.controller;
 
-import org.springframework.context.annotation.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import tgutkowski.project.backend.model.dtos.responses.AccountCreateResponse;
-import tgutkowski.project.backend.model.dtos.responses.AccountStatusResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountCreateResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.service.AccountService;
 
@@ -40,13 +38,19 @@ public class AccountController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/status/{accountNum}")
+    @GetMapping("/status/{accountId}")
     public ResponseEntity<AccountStatusResponse> accountStatus(@AuthenticationPrincipal AppUser appUser,
-                                                               @PathVariable String accountNum) {
-        AccountStatusResponse accountStatusResponse = accountService.getAccountStatus(appUser, accountNum);
+                                                               @PathVariable String accountId) {
+        AccountStatusResponse accountStatusResponse = accountService.getAccountStatus(appUser, accountId);
         return ResponseEntity.ok(accountStatusResponse);
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/close/{accountId}")
+    public ResponseEntity<Boolean> closeAccount(@AuthenticationPrincipal AppUser appUser,
+                                          @PathVariable String accountId){
+        return ResponseEntity.ok(false);
+    }
 
 
 

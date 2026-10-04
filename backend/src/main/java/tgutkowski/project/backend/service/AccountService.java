@@ -1,12 +1,11 @@
 package tgutkowski.project.backend.service;
 
 import jakarta.transaction.Transactional;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
-import tgutkowski.project.backend.model.dtos.responses.AccountStatusResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
@@ -14,7 +13,6 @@ import tgutkowski.project.backend.model.entities.enums.AccountType;
 import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -44,27 +42,27 @@ public class AccountService {
 
         accountRepository.save(account);
 
-        return account.getAccountNumber();
+        return account.getAccountId();
     }
 
     private Account buildAccount(AppUser owner) {
         Account account = new Account();
         account.setOwner(owner);
-        account.setAccountNumber(generateUniqueAccountNumber());
+        account.setAccountId(generateUniqueAccountId());
         account.setStatus(AccountStatus.ACTIVE);
         account.setType(AccountType.USER);
         return account;
     }
 
-    private String generateUniqueAccountNumber(){
-        String number = generateAccountNumber();
-        while(accountRepository.existsByAccountNumber(number)){
-            number = generateAccountNumber();
+    private String generateUniqueAccountId(){
+        String accId = generateAccountId();
+        while(accountRepository.existsByAccountId(accId)){
+            accId = generateAccountId();
         }
-        return number;
+        return accId;
     }
 
-    private String generateAccountNumber(){
+    private String generateAccountId(){
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
         sb.append("ACC-");
@@ -78,15 +76,15 @@ public class AccountService {
     public List<AccountStatusResponse> getAccountsStatusList(AppUser user){
         List<Account> accounts = accountRepository.findAllByOwner(user);
         return accounts.stream()
-                .map(a -> new AccountStatusResponse(a.getAccountNumber(), a.getAccountStatus()))
+                .map(a -> new AccountStatusResponse(a.getAccountId(), a.getAccountStatus()))
                 .toList();
     }
 
     @Transactional
-    public AccountStatusResponse getAccountStatus(AppUser user, String accountNumber){
-        Account account = accountRepository.findByOwnerAndAccountNumber(user, accountNumber)
+    public AccountStatusResponse getAccountStatus(AppUser user, String accountId){
+        Account account = accountRepository.findByOwnerAndAccountId(user, accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
 
-        return new AccountStatusResponse(account.getAccountNumber(), account.getAccountStatus());
+        return new AccountStatusResponse(account.getAccountId(), account.getAccountStatus());
     }
 }
