@@ -4,7 +4,7 @@ import {isAxiosError} from "axios";
 import type {ExceptionResponse, JwtClaims, LoginResponse} from "../Types.ts";
 import Alert from "./reusable/Alert.tsx";
 import {jwtDecode} from "jwt-decode";
-import {getToken, login, setToken} from "../api/auth.ts";
+import {login, setToken} from "../api/auth.ts";
 
 const styles = {
     page: `w-full 
@@ -83,13 +83,14 @@ function LoginPage(){
         try {
             const res = await login({username, password});
             const data = res.data as LoginResponse;
-            setToken(data.jwt);
-            const jwt = getToken();
+            const jwt = data.jwt;
+
             if(jwt == null) throw new Error("Auth token missing");
+            else setToken(jwt);
 
             const claims = jwtDecode<JwtClaims>(jwt);
             if(claims.roles.includes("ROLE_USER")){
-                navigate("/panel")
+                navigate("/accounts")
             } else if(claims.roles.includes("ROLE_ADMIN")){
                 navigate("/admin")
             }

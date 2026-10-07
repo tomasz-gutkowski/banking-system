@@ -1,5 +1,8 @@
 package tgutkowski.project.backend.controller;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.context.annotation.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +24,7 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
     public ResponseEntity<AccountCreateResponse> createAccount(@AuthenticationPrincipal AppUser appUser) {
 
@@ -30,27 +33,36 @@ public class AccountController {
         return ResponseEntity.ok(new AccountCreateResponse(accountNumber, message));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/statuses")
     public ResponseEntity<List<AccountStatusResponse>> accountStatuses(@AuthenticationPrincipal AppUser appUser) {
         List<AccountStatusResponse> accountStatusList = accountService.getAccountsStatusList(appUser);
         return ResponseEntity.ok(accountStatusList);
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/status/{accountId}")
     public ResponseEntity<AccountStatusResponse> accountStatus(@AuthenticationPrincipal AppUser appUser,
+                                                               @NotBlank(message = "Sender is required")
+                                                               @Pattern(regexp = "^ACC-\\d{8}$",
+                                                                   message = "Not an eligible account id")
                                                                @PathVariable String accountId) {
         AccountStatusResponse accountStatusResponse = accountService.getAccountStatus(appUser, accountId);
         return ResponseEntity.ok(accountStatusResponse);
     }
 
+
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/close/{accountId}")
     public ResponseEntity<Boolean> closeAccount(@AuthenticationPrincipal AppUser appUser,
-                                          @PathVariable String accountId){
+                                                @NotBlank(message = "Sender is required")
+                                                @Pattern(regexp = "^ACC-\\d{8}$",
+                                                        message = "Not an eligible account id")
+                                                @PathVariable String accountId){
         return ResponseEntity.ok(false);
     }
+
+
 
 
 

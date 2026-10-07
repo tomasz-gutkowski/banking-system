@@ -1,7 +1,8 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 import LoginPage from "./auth/LoginPage.tsx";
 import RegisterPage from "./auth/RegisterPage.tsx";
-import UserPanel from "./user/UserPanel.tsx";
+import AccountSelectionPanel from "./user/AccountSelectionPanel.tsx";
+import accountSelectionPanelLoader from "./user/components/accountSelectionPanel.loader.ts";
 
 
 const router = createBrowserRouter([
@@ -14,8 +15,9 @@ const router = createBrowserRouter([
         element: <RegisterPage/>
     },
     {
-        path: "/panel",
-        element: <UserPanel/>
+        path: "/accounts",
+        element: <AccountSelectionPanel/>,
+        loader: accountSelectionPanelLoader
     },
     {
         path: "/admin",
