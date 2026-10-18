@@ -5,11 +5,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountClosureResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountFreezeResponse;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.AccountStatus;
 import tgutkowski.project.backend.model.entities.enums.AccountType;
+import tgutkowski.project.backend.model.entities.enums.Roles;
 import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
@@ -86,5 +89,47 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
 
         return new AccountStatusResponse(account.getAccountId(), account.getAccountStatus());
+    }
+
+    @Transactional
+    public AccountClosureResponse closeAccount(AppUser user, String accountId, String reason) {
+        Account account;
+        if(user.getRole() == Roles.ADMIN){
+            account = accountRepository.findByAccountIdLocking(accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
+
+        } else {
+            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
+        }
+        if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Account is already closed");
+
+        String message = "Account closed successfully";
+
+        account.setStatus(AccountStatus.CLOSED);
+
+        return new AccountClosureResponse(account.getAccountId(), message);
+    }
+
+    @Transactional
+    public AccountFreezeResponse freezeAccount(AppUser user, String accountId, String reason) {
+        Account account;
+        if(user.getRole() == Roles.ADMIN){
+            account = accountRepository.findByAccountIdLocking(accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
+        } else {
+            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
+        }
+        if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Cannot freeze closed account");
+        if(account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is already frozen");
+
+        String message = "Account frozen successfully";
+
+        account.setStatus(AccountStatus.FROZEN);
+
+        //todo log account id, reason and user who performed freeze/closure to db
+
+        return new AccountFreezeResponse(account.getAccountId(), message);
     }
 }

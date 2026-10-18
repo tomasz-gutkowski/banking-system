@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.model.dtos.requests;
+package tgutkowski.project.backend.model.dtos.requests.auth;
 
 import jakarta.validation.constraints.NotBlank;
 

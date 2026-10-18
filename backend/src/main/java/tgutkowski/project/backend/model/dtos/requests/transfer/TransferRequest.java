@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.model.dtos.requests;
+package tgutkowski.project.backend.model.dtos.requests.transfer;
 
 import jakarta.validation.constraints.*;
 

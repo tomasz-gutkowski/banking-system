@@ -34,22 +34,31 @@ public class TransferService {
 
     @Transactional
     public BigDecimal getBalance(AppUser appUser, String accountId) {
-        Account acc = accountRepository.findByAccountNumberLocking(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
-
         verifyAccountBelongsToUser(appUser, accountId);
+
+        Account acc = accountRepository.findByAccountIdLocking(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
 
         return balanceForAccount(acc);
     }
 
     @Transactional
     public String transferMoney(AppUser sender, String senderAccountId, String receiverAccountId, BigDecimal amount) {
-        Account senderAcc = accountRepository.findByAccountNumberLocking(senderAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender ID"));
-        Account receiverAcc = accountRepository.findByAccountNumberLocking(receiverAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
-
         verifyAccountBelongsToUser(sender, senderAccountId);
+
+        Account senderAcc;
+        Account receiverAcc;
+        if (senderAccountId.compareTo(receiverAccountId) < 0) {
+            senderAcc = accountRepository.findByAccountIdLocking(senderAccountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender ID"));
+            receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
+        } else {
+            receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
+            senderAcc = accountRepository.findByAccountIdLocking(senderAccountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender ID"));
+        }
 
         BigDecimal senderBalance =  balanceForAccount(senderAcc);
 
@@ -99,10 +108,10 @@ public class TransferService {
 
     @Transactional
     public Page<TransferInfoDto> getTransfers(AppUser user, String accountId, Pageable pageable){
-        Account acc = accountRepository.findByAccountNumberLocking(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
-
         verifyAccountBelongsToUser(user, accountId);
+
+        Account acc = accountRepository.findByAccountIdLocking(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
 
         Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(acc, pageable);
 

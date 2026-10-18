@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import tgutkowski.project.backend.model.dtos.requests.TransferRequest;
+import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
 import tgutkowski.project.backend.model.dtos.responses.transfer.BalanceResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferResponse;

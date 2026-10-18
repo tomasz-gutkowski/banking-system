@@ -14,7 +14,7 @@ public class Account {
     private String accountId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false, unique = true)
+    @JoinColumn(name = "owner_id", nullable = false, updatable = false)
     private AppUser owner;
 
     @Column(nullable = false)
