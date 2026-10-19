@@ -8,6 +8,7 @@ import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountClosureResponse;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountFreezeResponse;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountUnfreezeResponse;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AccountStatusChangeRequest;
 import tgutkowski.project.backend.model.entities.AppUser;
@@ -185,8 +186,51 @@ public class AccountService {
 
         account.setStatus(AccountStatus.FROZEN);
 
-        //todo log account id, reason and user who performed freeze/closure to db
-
         return new AccountFreezeResponse(account.getAccountId(), message);
+    }
+
+    public AccountUnfreezeResponse unfreezeAccount(AppUser user, String accountId) {
+        Account account;
+        if(user.getRole() == Roles.ADMIN){
+            account = accountRepository.findByAccountIdLocking(accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
+        } else {
+            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
+        }
+        if(!account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is not frozen");
+        if(!ascrRepository.existsActiveUnfreezeRequests(account)) throw new ConflictException("Unfreeze request is already pending");
+
+        AccountStatusChangeRequest ascr = new AccountStatusChangeRequest();
+        String message;
+        if(user.getRole() == Roles.ADMIN){
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.UNFREEZE);
+            ascr.setRequestedBy(user);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.MANUAL);
+            ascr.setResolvedBy(user);
+            ascr.setResolutionStatus(ResolutionStatus.ACCEPTED);
+            ascr.setResolutionDate(now);
+
+            message = "Account unfrozen successfully";
+
+            account.setStatus(AccountStatus.ACTIVE);
+        } else {
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.UNFREEZE);
+            ascr.setRequestedBy(user);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.MANUAL);
+            ascr.setResolutionStatus(ResolutionStatus.PENDING);
+
+            message = "Account unfreeze request created";
+        }
+
+        ascrRepository.save(ascr);
+
+        return new AccountUnfreezeResponse(account.getAccountId(), message);
     }
 }

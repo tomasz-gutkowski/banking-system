@@ -9,10 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.account.AccountClosureRequest;
 import tgutkowski.project.backend.model.dtos.requests.account.AccountFreezeRequest;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountClosureResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountCreateResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountFreezeResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
+import tgutkowski.project.backend.model.dtos.requests.account.AccountUnfreezeRequest;
+import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.service.AccountService;
 
@@ -79,6 +77,16 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/unfreeze")
+    public ResponseEntity<AccountUnfreezeResponse> unfreezeAccount(@AuthenticationPrincipal AppUser appUser,
+                                            @Valid @RequestBody AccountUnfreezeRequest request){
+        String accountId = request.accountId();
+
+        AccountUnfreezeResponse response = accountService.unfreezeAccount(appUser, accountId);
+
+        return ResponseEntity.ok(response);
+    }
 
 
 }
