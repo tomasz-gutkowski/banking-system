@@ -9,13 +9,14 @@ import tgutkowski.project.backend.model.dtos.responses.account.AccountClosureRes
 import tgutkowski.project.backend.model.dtos.responses.account.AccountFreezeResponse;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
 import tgutkowski.project.backend.model.entities.Account;
+import tgutkowski.project.backend.model.entities.AccountStatusChangeRequest;
 import tgutkowski.project.backend.model.entities.AppUser;
-import tgutkowski.project.backend.model.entities.enums.AccountStatus;
-import tgutkowski.project.backend.model.entities.enums.AccountType;
-import tgutkowski.project.backend.model.entities.enums.Roles;
+import tgutkowski.project.backend.model.entities.enums.*;
 import tgutkowski.project.backend.repository.AccountRepository;
+import tgutkowski.project.backend.repository.AccountStatusChangeRequestRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 
@@ -23,10 +24,12 @@ import java.util.Random;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final AppUserRepository appUserRepository;
+    private final AccountStatusChangeRequestRepository ascrRepository;
 
-    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository) {
+    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository,  AccountStatusChangeRequestRepository ascrRepository) {
         this.accountRepository = accountRepository;
         this.appUserRepository = appUserRepository;
+        this.ascrRepository = ascrRepository;
     }
 
     @Transactional
@@ -94,6 +97,7 @@ public class AccountService {
     @Transactional
     public AccountClosureResponse closeAccount(AppUser user, String accountId, String reason) {
         Account account;
+
         if(user.getRole() == Roles.ADMIN){
             account = accountRepository.findByAccountIdLocking(accountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
@@ -102,7 +106,34 @@ public class AccountService {
             account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
         }
+
         if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Account is already closed");
+
+        AccountStatusChangeRequest ascr = new AccountStatusChangeRequest();
+        if(user.getRole() == Roles.ADMIN){
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.CLOSE);
+            ascr.setRequestedBy(user);
+            ascr.setReason(reason);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.MANUAL);
+            ascr.setResolvedBy(user);
+            ascr.setResolutionStatus(ResolutionStatus.ACCEPTED);
+            ascr.setResolutionDate(now);
+        } else {
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.CLOSE);
+            ascr.setRequestedBy(user);
+            ascr.setReason(reason);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.AUTO);
+            ascr.setResolutionStatus(ResolutionStatus.ACCEPTED);
+            ascr.setResolutionDate(now);
+        }
+
+        ascrRepository.save(ascr);
 
         String message = "Account closed successfully";
 
@@ -123,6 +154,32 @@ public class AccountService {
         }
         if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Cannot freeze closed account");
         if(account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is already frozen");
+
+        AccountStatusChangeRequest ascr = new AccountStatusChangeRequest();
+        if(user.getRole() == Roles.ADMIN){
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.FREEZE);
+            ascr.setRequestedBy(user);
+            ascr.setReason(reason);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.MANUAL);
+            ascr.setResolvedBy(user);
+            ascr.setResolutionStatus(ResolutionStatus.ACCEPTED);
+            ascr.setResolutionDate(now);
+        } else {
+            LocalDateTime now = LocalDateTime.now();
+            ascr.setAccount(account);
+            ascr.setRequestType(StatusChange.FREEZE);
+            ascr.setRequestedBy(user);
+            ascr.setReason(reason);
+            ascr.setRequestDate(now);
+            ascr.setResolutionType(ResolutionType.AUTO);
+            ascr.setResolutionStatus(ResolutionStatus.ACCEPTED);
+            ascr.setResolutionDate(now);
+        }
+
+        ascrRepository.save(ascr);
 
         String message = "Account frozen successfully";
 
