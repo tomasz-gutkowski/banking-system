@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {
-    Optional<Account> findByOwner(AppUser owner);
-    Optional<Account> findByOwnerUsername(String username);
+    Optional<Account> findByAccountId(String accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Account> findByOwnerAndAccountId(AppUser owner, String accountId);

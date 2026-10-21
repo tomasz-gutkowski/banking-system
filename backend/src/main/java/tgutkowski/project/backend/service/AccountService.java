@@ -1,14 +1,13 @@
 package tgutkowski.project.backend.service;
 
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.ConflictException;
+import tgutkowski.project.backend.exceptions.InternalException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountClosureResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountFreezeResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusResponse;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountUnfreezeResponse;
+import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AccountStatusChangeRequest;
 import tgutkowski.project.backend.model.entities.AppUser;
@@ -23,21 +22,46 @@ import java.util.Random;
 
 @Service
 public class AccountService {
+    @Value("${system.account.id}")
+    private String systemAccountId;
+
     private final AccountRepository accountRepository;
     private final AppUserRepository appUserRepository;
     private final AccountStatusChangeRequestRepository ascrRepository;
+    private final TransferService transferService;
 
-    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository,  AccountStatusChangeRequestRepository ascrRepository) {
+    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository,  AccountStatusChangeRequestRepository ascrRepository, TransferService transferService) {
         this.accountRepository = accountRepository;
         this.appUserRepository = appUserRepository;
         this.ascrRepository = ascrRepository;
+        this.transferService = transferService;
     }
 
+    private Account findAccountBelongingToUserLocking(AppUser user, String accountId) {
+        return accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and ID"));
+    }
+
+    private Account findAccountBelongingToUser(AppUser user, String accountId) {
+        return accountRepository.findByOwnerAndAccountId(user, accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and ID"));
+    }
+
+    private Account findAccountByAccountIdLocking(String accountId) {
+        return accountRepository.findByAccountIdLocking(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
+    }
+
+    private Account findAccountByAccountId(String accountId) {
+        return accountRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
+    }
+
+
     @Transactional
-    public String createAccount(AppUser user) throws ConflictException {
+    public AccountCreateResponse createAccount(AppUser user) throws ConflictException {
         String username = user.getUsername();
 
-        //LOCK QUERY
         AppUser owner = appUserRepository.findByUsernameLocking(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username));
 
@@ -49,34 +73,39 @@ public class AccountService {
 
         accountRepository.save(account);
 
-        return account.getAccountId();
+        String message = "Account created successfully";
+
+        return new AccountCreateResponse(account.getAccountId(), message);
     }
 
-    private Account buildAccount(AppUser owner) {
-        Account account = new Account();
-        account.setOwner(owner);
-        account.setAccountId(generateUniqueAccountId());
-        account.setStatus(AccountStatus.ACTIVE);
-        account.setType(AccountType.USER);
-        return account;
-    }
+    @Transactional
+    public ClaimBonusResponse claimBonus(AppUser user, String accountId){
+        String username = user.getUsername();
 
-    private String generateUniqueAccountId(){
-        String accId = generateAccountId();
-        while(accountRepository.existsByAccountId(accId)){
-            accId = generateAccountId();
+        AppUser owner = appUserRepository.findByUsernameLocking(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+
+        String message;
+
+        if(owner.getBonusStatus().equals(BonusStatus.AVAILABLE)){
+            Account userAccount = findAccountBelongingToUser(user, accountId);
+            Account sysAccount = accountRepository.findByAccountId(systemAccountId)
+                    .orElseThrow(() -> new InternalException("There was a problem with your request"));
+
+            transferService.claimBonusTransfer(userAccount, sysAccount);
+
+            owner.setBonusStatus(BonusStatus.CLAIMED);
+
+            message = "Bonus claimed successfully";
         }
-        return accId;
-    }
-
-    private String generateAccountId(){
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        sb.append("ACC-");
-        for(int i = 0; i < 8; i++){
-            sb.append(random.nextInt(10));
+        else if(owner.getBonusStatus().equals(BonusStatus.CLAIMED)){
+            message = "Your bonus was already claimed";
         }
-        return sb.toString();
+        else{
+            message = "Bonus is unavailable for this user";
+        }
+
+        return new ClaimBonusResponse(accountId, message);
     }
 
     @Transactional
@@ -89,8 +118,10 @@ public class AccountService {
 
     @Transactional
     public AccountStatusResponse getAccountStatus(AppUser user, String accountId){
-        Account account = accountRepository.findByOwnerAndAccountId(user, accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
+        Account account;
+
+        if(user.getRole() == Roles.ADMIN) account = findAccountByAccountId(accountId);
+        else account = findAccountBelongingToUser(user, accountId);
 
         return new AccountStatusResponse(account.getAccountId(), account.getAccountStatus());
     }
@@ -99,14 +130,8 @@ public class AccountService {
     public AccountClosureResponse closeAccount(AppUser user, String accountId, String reason) {
         Account account;
 
-        if(user.getRole() == Roles.ADMIN){
-            account = accountRepository.findByAccountIdLocking(accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
-
-        } else {
-            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
-        }
+        if(user.getRole() == Roles.ADMIN) account = findAccountByAccountIdLocking(accountId);
+        else account = findAccountBelongingToUserLocking(user, accountId);
 
         if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Account is already closed");
 
@@ -146,13 +171,10 @@ public class AccountService {
     @Transactional
     public AccountFreezeResponse freezeAccount(AppUser user, String accountId, String reason) {
         Account account;
-        if(user.getRole() == Roles.ADMIN){
-            account = accountRepository.findByAccountIdLocking(accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
-        } else {
-            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
-        }
+
+        if(user.getRole() == Roles.ADMIN) account = findAccountByAccountIdLocking(accountId);
+        else account = findAccountBelongingToUserLocking(user, accountId);
+
         if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Cannot freeze closed account");
         if(account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is already frozen");
 
@@ -189,17 +211,15 @@ public class AccountService {
         return new AccountFreezeResponse(account.getAccountId(), message);
     }
 
+    @Transactional
     public AccountUnfreezeResponse unfreezeAccount(AppUser user, String accountId) {
         Account account;
-        if(user.getRole() == Roles.ADMIN){
-            account = accountRepository.findByAccountIdLocking(accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the number"));
-        } else {
-            account = accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and number"));
-        }
+
+        if(user.getRole() == Roles.ADMIN) account = findAccountByAccountIdLocking(accountId);
+        else account = findAccountBelongingToUserLocking(user, accountId);
+
         if(!account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is not frozen");
-        if(!ascrRepository.existsActiveUnfreezeRequests(account)) throw new ConflictException("Unfreeze request is already pending");
+        if(ascrRepository.existsActiveUnfreezeRequests(account)) throw new ConflictException("Unfreeze request is already pending");
 
         AccountStatusChangeRequest ascr = new AccountStatusChangeRequest();
         String message;
@@ -232,5 +252,32 @@ public class AccountService {
         ascrRepository.save(ascr);
 
         return new AccountUnfreezeResponse(account.getAccountId(), message);
+    }
+
+    private Account buildAccount(AppUser owner) {
+        Account account = new Account();
+        account.setOwner(owner);
+        account.setAccountId(generateUniqueAccountId());
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setType(AccountType.USER);
+        return account;
+    }
+
+    private String generateUniqueAccountId(){
+        String accId = generateAccountId();
+        while(accountRepository.existsByAccountId(accId)){
+            accId = generateAccountId();
+        }
+        return accId;
+    }
+
+    private String generateAccountId(){
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder();
+        sb.append("ACC-");
+        for(int i = 0; i < 8; i++){
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.account.AccountClosureRequest;
 import tgutkowski.project.backend.model.dtos.requests.account.AccountFreezeRequest;
 import tgutkowski.project.backend.model.dtos.requests.account.AccountUnfreezeRequest;
+import tgutkowski.project.backend.model.dtos.requests.account.ClaimBonusRequest;
 import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.service.AccountService;
@@ -29,31 +30,36 @@ public class AccountController {
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
     public ResponseEntity<AccountCreateResponse> createAccount(@AuthenticationPrincipal AppUser appUser) {
-        String accountNumber = accountService.createAccount(appUser);
-        String message = "Account created successfully";
-        return ResponseEntity.ok(new AccountCreateResponse(accountNumber, message));
+        AccountCreateResponse response = accountService.createAccount(appUser);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/statuses")
     public ResponseEntity<List<AccountStatusResponse>> accountStatuses(@AuthenticationPrincipal AppUser appUser) {
-        List<AccountStatusResponse> accountStatusList = accountService.getAccountsStatusList(appUser);
-        return ResponseEntity.ok(accountStatusList);
+        List<AccountStatusResponse> response = accountService.getAccountsStatusList(appUser);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
-    @PreAuthorize("hasRole('USER')")
     @GetMapping("/status/{accountId}")
     public ResponseEntity<AccountStatusResponse> accountStatus(@AuthenticationPrincipal AppUser appUser,
                                                                @NotBlank(message = "Sender is required")
                                                                @Pattern(regexp = "^ACC-\\d{8}$",
                                                                    message = "Not an eligible account id")
                                                                @PathVariable String accountId) {
-        AccountStatusResponse accountStatusResponse = accountService.getAccountStatus(appUser, accountId);
-        return ResponseEntity.ok(accountStatusResponse);
+        AccountStatusResponse response = accountService.getAccountStatus(appUser, accountId);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
-
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/close")
     public ResponseEntity<AccountClosureResponse> closeAccount(@AuthenticationPrincipal AppUser appUser,
                                                 @Valid @RequestBody AccountClosureRequest request){
@@ -62,10 +68,12 @@ public class AccountController {
 
         AccountClosureResponse response = accountService.closeAccount(appUser, accountId, reason);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/freeze")
     public ResponseEntity<AccountFreezeResponse> freezeAccount(@AuthenticationPrincipal AppUser appUser,
                                           @Valid @RequestBody AccountFreezeRequest request){
@@ -74,10 +82,12 @@ public class AccountController {
 
         AccountFreezeResponse response = accountService.freezeAccount(appUser, accountId, reason);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
-    @PreAuthorize("isAuthenticated()")
     @PostMapping("/unfreeze")
     public ResponseEntity<AccountUnfreezeResponse> unfreezeAccount(@AuthenticationPrincipal AppUser appUser,
                                             @Valid @RequestBody AccountUnfreezeRequest request){
@@ -85,8 +95,25 @@ public class AccountController {
 
         AccountUnfreezeResponse response = accountService.unfreezeAccount(appUser, accountId);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/claim-bonus")
+    public ResponseEntity<ClaimBonusResponse> claimBonus(@AuthenticationPrincipal AppUser appUser,
+                                                         @Valid @RequestBody ClaimBonusRequest request){
+        String accountId = request.accountId();
+
+        ClaimBonusResponse response = accountService.claimBonus(appUser, accountId);
+
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
 
 }

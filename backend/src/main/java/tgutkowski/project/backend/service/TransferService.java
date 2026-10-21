@@ -2,6 +2,8 @@ package tgutkowski.project.backend.service;
 
 import jakarta.transaction.Transactional;
 
+import jakarta.validation.constraints.PositiveOrZero;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,11 @@ import java.time.LocalDateTime;
 @Service
 public class TransferService {
 
+
+    @Value("${starting.bonus.value}")
+    @PositiveOrZero
+    private BigDecimal startingBonusValue;
+
     private final TransferRepository transferRepository;
     private final AccountRepository accountRepository;
 
@@ -32,32 +39,42 @@ public class TransferService {
         this.accountRepository = accountRepository;
     }
 
+    private Account findAccountBelongingToUserLocking(AppUser user, String accountId) {
+        return accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and ID"));
+    }
+
+    @Transactional
+    public void claimBonusTransfer(Account account, Account systemAccount) {
+        Transfer transfer = new Transfer();
+        transfer.setAmount(startingBonusValue);
+        transfer.setSender(systemAccount);
+        transfer.setReceiver(account);
+        transfer.setStatus(TransferStatus.COMPLETED);
+        transfer.setDate(LocalDateTime.now());
+
+        transferRepository.save(transfer);
+    }
+
     @Transactional
     public BigDecimal getBalance(AppUser appUser, String accountId) {
-        verifyAccountBelongsToUser(appUser, accountId);
+        Account account = findAccountBelongingToUserLocking(appUser, accountId);
 
-        Account acc = accountRepository.findByAccountIdLocking(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
-
-        return balanceForAccount(acc);
+        return balanceForAccount(account);
     }
 
     @Transactional
     public String transferMoney(AppUser sender, String senderAccountId, String receiverAccountId, BigDecimal amount) {
-        verifyAccountBelongsToUser(sender, senderAccountId);
-
         Account senderAcc;
         Account receiverAcc;
         if (senderAccountId.compareTo(receiverAccountId) < 0) {
-            senderAcc = accountRepository.findByAccountIdLocking(senderAccountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender ID"));
+            senderAcc = findAccountBelongingToUserLocking(sender, receiverAccountId);
             receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
         } else {
             receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
-            senderAcc = accountRepository.findByAccountIdLocking(senderAccountId)
-                    .orElseThrow(() -> new ResourceNotFoundException("No account found for the sender ID"));
+            senderAcc = findAccountBelongingToUserLocking(sender, receiverAccountId);
         }
 
         BigDecimal senderBalance =  balanceForAccount(senderAcc);
@@ -74,6 +91,15 @@ public class TransferService {
 
         //TODO: currently returning transaction ID from database, but independent transaction identifier would work better
         return transfer.getId().toString();
+    }
+
+    @Transactional
+    public Page<TransferInfoDto> getTransfers(AppUser user, String accountId, Pageable pageable){
+        Account acc = findAccountBelongingToUserLocking(user, accountId);
+
+        Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(acc, pageable);
+
+        return transfers.map(TransferInfoDto::from);
     }
 
     private BigDecimal balanceForAccount(Account acc){
@@ -98,24 +124,7 @@ public class TransferService {
         }
 
         if(!receiver.getAccountStatus().equals(AccountStatus.ACTIVE))
-            throw new AccountNotEligibleException("Sender account is not active");
+            throw new AccountNotEligibleException("Receiver account is not active");
 
     }
-
-    private void verifyAccountBelongsToUser(AppUser user, String accountId) {
-        if(!accountRepository.existsByOwnerAndAccountId(user, accountId)) throw new ResourceNotFoundException("No such account found for the user");
-    }
-
-    @Transactional
-    public Page<TransferInfoDto> getTransfers(AppUser user, String accountId, Pageable pageable){
-        verifyAccountBelongsToUser(user, accountId);
-
-        Account acc = accountRepository.findByAccountIdLocking(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
-
-        Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(acc, pageable);
-
-        return transfers.map(TransferInfoDto::from);
-    }
-
 }

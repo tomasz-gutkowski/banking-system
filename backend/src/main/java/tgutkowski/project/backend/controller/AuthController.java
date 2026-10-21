@@ -28,8 +28,12 @@ public class AuthController {
 
         String token = authService.authenticate(username, password);
         String message = "Logged in successfully";
+        LoginResponse response = new LoginResponse(token, message);
 
-        return ResponseEntity.ok(new LoginResponse(message, token));
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
 
@@ -42,7 +46,12 @@ public class AuthController {
 
         String message = "Account created successfully";
 
-        return ResponseEntity.ok(new RegisterResponse(message));
+        RegisterResponse response = new RegisterResponse(message);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
 

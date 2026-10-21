@@ -38,7 +38,13 @@ public class TransferController {
                                                          message = "Not an eligible account id")
                                                  @PathVariable String accountId) {
         BigDecimal balance = transferService.getBalance(appUser, accountId);
-        return ResponseEntity.ok(new BalanceResponse(accountId, balance));
+
+        BalanceResponse response = new BalanceResponse(accountId, balance);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
     @PostMapping("/transferTo")
@@ -55,7 +61,12 @@ public class TransferController {
         String id = transferService.transferMoney(appUser, accountId, receiverAccNum, amount);
         String message = "Transfer completed successfully";
 
-        return ResponseEntity.ok(new TransferResponse(id, accountId, receiverAccNum, amount, message));
+        TransferResponse response = new TransferResponse(id, accountId, receiverAccNum, amount, message);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 
 

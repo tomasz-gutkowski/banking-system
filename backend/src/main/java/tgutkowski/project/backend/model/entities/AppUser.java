@@ -5,6 +5,7 @@ import org.jspecify.annotations.NullMarked;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import tgutkowski.project.backend.model.entities.enums.BonusStatus;
 import tgutkowski.project.backend.model.entities.enums.Roles;
 
 import java.util.Collection;
@@ -24,6 +25,11 @@ public class AppUser implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Roles role;
+
+    @Enumerated(EnumType.STRING)
+    private BonusStatus bonusStatus = BonusStatus.AVAILABLE;
+
+    private Boolean enabled = true;
 
     public String getUsername() {
         return username;
@@ -46,8 +52,10 @@ public class AppUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.enabled;
     }
+
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
 
     @Override
     @NullMarked
@@ -63,6 +71,7 @@ public class AppUser implements UserDetails {
         return role;
     }
 
+
     public void setUsername(String username) {
         this.username = username;
     }
@@ -73,5 +82,13 @@ public class AppUser implements UserDetails {
 
     public void setRole(Roles role) {
         this.role = role;
+    }
+
+    public BonusStatus getBonusStatus() {
+        return bonusStatus;
+    }
+
+    public void setBonusStatus(BonusStatus bonusStatus) {
+        this.bonusStatus = bonusStatus;
     }
 }
