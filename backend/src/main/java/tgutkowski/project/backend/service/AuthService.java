@@ -2,53 +2,72 @@ package tgutkowski.project.backend.service;
 
 
 import jakarta.transaction.Transactional;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.InvalidCredentialsException;
+import tgutkowski.project.backend.exceptions.InvalidTokenException;
+import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
+import tgutkowski.project.backend.model.dtos.responses.auth.RefreshResponse;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.Roles;
 import tgutkowski.project.backend.repository.AppUserRepository;
-import tgutkowski.project.backend.service.jwt.JwtUtil;
+import tgutkowski.project.backend.service.authtokens.jwt.JwtUtil;
+import tgutkowski.project.backend.service.authtokens.refresh.RefreshTokenStore;
 
 @Service
 public class AuthService {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final AppUserDetailsService appUserDetailsService;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenStore refreshTokenStore;
 
     public AuthService(AppUserRepository appUserRepository,
                        PasswordEncoder passwordEncoder,
-                       AuthenticationManager authenticationManager,
-                       AppUserDetailsService appUserDetailsService,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       RefreshTokenStore refreshTokenStore) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.appUserDetailsService = appUserDetailsService;
         this.jwtUtil = jwtUtil;
+        this.refreshTokenStore = refreshTokenStore;
     }
 
+    private AppUser authenticate(String username, String password){
+        AppUser user = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
-    public String authenticate(String username, String password) {
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-        } catch (BadCredentialsException | UsernameNotFoundException e) {
+        String expectedPassword = user.getPassword();
+
+        if(!passwordEncoder.matches(password, expectedPassword)) {
             throw new InvalidCredentialsException("Invalid credentials");
         }
-        UserDetails userDetails = appUserDetailsService.loadUserByUsername(username);
-        return jwtUtil.generateToken(userDetails);
+        if(!user.isEnabled() || !user.isAccountNonLocked() || !user.isAccountNonExpired()) {
+            throw new InvalidCredentialsException("Invalid credentials");
+        }
+
+        return user;
     }
+
+
+    public LoginResponse login(String username, String password) {
+        AppUser user = authenticate(username, password);
+
+        String jwt = jwtUtil.generateToken(user);
+
+        String message = "Login successful";
+        return new LoginResponse(jwt, message);
+    }
+
+    public String getRefreshToken(String username) {
+        AppUser appUser = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("No user found with username: " + username));
+
+        return refreshTokenStore.issueToken(appUser.getId());
+    }
+
 
     @Transactional
     public void register(String username, String password) throws InvalidArgumentException {
@@ -60,5 +79,18 @@ public class AuthService {
         appUser.setPassword(passwordEncoder.encode(password));
         appUser.setRole(Roles.USER);
         appUserRepository.save(appUser);
+    }
+
+    public RefreshResponse refreshJwt(String refreshToken) {
+        Long ownerId = refreshTokenStore.findTokenOwner(refreshToken)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired refresh token"));
+
+        AppUser appUser = appUserRepository.findById(ownerId)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired refresh token"));
+
+        String jwt = jwtUtil.generateToken(appUser);
+        String message = "Refresh successful";
+
+        return new RefreshResponse(jwt, message);
     }
 }

@@ -1,11 +1,12 @@
-package tgutkowski.project.backend.service.jwt;
+package tgutkowski.project.backend.service.authtokens.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+import tgutkowski.project.backend.model.entities.AppUser;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
@@ -25,12 +26,12 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(encodedKey);
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(AppUser appUser) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
-                .subject(userDetails.getUsername())
-                .claim("roles", userDetails.getAuthorities().stream()
-                        .map(authority -> authority.getAuthority())
+                .subject(appUser.getUsername())
+                .claim("roles", appUser.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
                         .toList())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expiration))

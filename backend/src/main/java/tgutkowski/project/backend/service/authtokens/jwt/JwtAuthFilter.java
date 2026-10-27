@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.service.jwt;
+package tgutkowski.project.backend.service.authtokens.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -9,23 +9,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tgutkowski.project.backend.exceptions.InvalidTokenException;
 import tgutkowski.project.backend.model.entities.AppUser;
+import tgutkowski.project.backend.repository.AppUserRepository;
 
 import java.io.IOException;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final AppUserRepository appUserRepository;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtUtil jwtUtil, AppUserRepository appUserRepository) {
         this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
+        this.appUserRepository = appUserRepository;
     }
 
     @Override
@@ -51,11 +51,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String username = claims.getSubject();
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            AppUser user = appUserRepository.findByUsername(username)
+                    .orElseThrow(() -> new InvalidTokenException("Authentication failed"));
+
+            if(!user.isEnabled() || !user.isAccountNonLocked() || !user.isAccountNonExpired()) {
+                throw new InvalidTokenException("Authentication failed");
+            }
 
             if(!jwtUtil.isTokenExpired(claims)){
                 UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

@@ -31,6 +31,8 @@ public class AppUser implements UserDetails {
 
     private Boolean enabled = true;
 
+    public Long getId() {return id;}
+
     public String getUsername() {
         return username;
     }
