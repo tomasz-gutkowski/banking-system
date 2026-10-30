@@ -1,5 +1,6 @@
 package tgutkowski.project.backend.repository;
 
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,7 @@ import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.Transfer;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.receiver = :account AND (t.status = 'PENDING' OR t.status = 'COMPLETED')")
@@ -19,4 +21,13 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
 
     @Query("SELECT t FROM Transfer t WHERE t.sender = :account OR t.receiver = :account")
     Page<Transfer> findAllTransfersForAccount(@Param("account") Account account, Pageable pageable);
+
+    @Query("""
+                SELECT t
+                FROM Transfer t
+                WHERE (t.sender = :account OR t.receiver = :account)
+                AND (:cursor IS NULL OR t.id <= :cursor)
+                ORDER BY t.id DESC
+                """)
+    List<Transfer> getTransfersPage(@Param("account") Account account, @Param("cursor") Long cursor,  Limit limit);
 }

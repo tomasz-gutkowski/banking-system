@@ -12,10 +12,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
+import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.BalanceResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferResponse;
 import tgutkowski.project.backend.model.entities.AppUser;
+import tgutkowski.project.backend.model.entities.Transfer;
 import tgutkowski.project.backend.service.TransferService;
 
 import java.math.BigDecimal;
@@ -71,16 +73,16 @@ public class TransferController {
 
 
     @GetMapping("/transfers")
-    public Page<TransferInfoDto> getTransfers(@AuthenticationPrincipal AppUser appUser,
-                                              @NotBlank(message = "Sender is required")
+    public PageResponse<Transfer, TransferInfoDto> getTransfers(@AuthenticationPrincipal AppUser appUser,
+                                                                @NotBlank(message = "Sender is required")
                                               @Pattern(regexp = "^ACC-\\d{8}$",
                                                       message = "Not an eligible account id")
                                               @PathVariable String accountId,
-                                              @RequestParam(defaultValue = "0") int page,
-                                              @RequestParam(defaultValue = "10")int size) {
+                                                                @RequestParam(defaultValue = "10") int size,
+                                                                @RequestParam(defaultValue = "") String cursor
+    ) {
         int sizeCapped = Math.min(size, 20);
-        Pageable pageable = PageRequest.of(page, sizeCapped, Sort.by("date").descending());
 
-        return transferService.getTransfers(appUser, accountId, pageable);
+        return transferService.getTransfers(appUser, accountId, sizeCapped, cursor);
     }
 }

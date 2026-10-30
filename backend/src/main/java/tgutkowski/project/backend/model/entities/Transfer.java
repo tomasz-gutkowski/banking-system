@@ -1,13 +1,15 @@
 package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
+import tgutkowski.project.backend.model.dtos.responses.paging.Cursorable;
+import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.entities.enums.TransferStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-public class Transfer {
+public class Transfer implements Cursorable<TransferInfoDto>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -72,5 +74,15 @@ public class Transfer {
 
     public void setStatus(TransferStatus status) {
         this.status = status;
+    }
+
+    @Override
+    public String getAsCursor() {
+        return this.id.toString();
+    }
+
+    @Override
+    public TransferInfoDto convertToDTO() {
+        return TransferInfoDto.from(this);
     }
 }

@@ -1,6 +1,9 @@
 package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeRequestInfoDto;
+import tgutkowski.project.backend.model.dtos.responses.paging.Cursorable;
+import tgutkowski.project.backend.model.entities.enums.AccountStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionType;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
@@ -8,7 +11,7 @@ import tgutkowski.project.backend.model.entities.enums.StatusChange;
 import java.time.LocalDateTime;
 
 @Entity
-public class AccountStatusChangeRequest {
+public class AccountStatusChangeRequest implements Cursorable<AccountStatusChangeRequestInfoDto>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -123,5 +126,15 @@ public class AccountStatusChangeRequest {
 
     public void setResolutionStatus(ResolutionStatus resolutionStatus) {
         this.resolutionStatus = resolutionStatus;
+    }
+
+    @Override
+    public String getAsCursor() {
+        return this.id.toString();
+    }
+
+    @Override
+    public AccountStatusChangeRequestInfoDto convertToDTO() {
+        return AccountStatusChangeRequestInfoDto.from(this);
     }
 }

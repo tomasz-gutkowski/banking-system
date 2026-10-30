@@ -16,7 +16,6 @@ import tgutkowski.project.backend.service.AuthService;
 
 import java.time.Duration;
 
-@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {

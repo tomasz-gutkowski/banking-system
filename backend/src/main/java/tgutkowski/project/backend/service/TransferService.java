@@ -4,12 +4,14 @@ import jakarta.transaction.Transactional;
 
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
+import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.entities.Account;
 import tgutkowski.project.backend.model.entities.AppUser;
@@ -22,6 +24,7 @@ import tgutkowski.project.backend.repository.TransferRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class TransferService {
@@ -68,13 +71,13 @@ public class TransferService {
         Account senderAcc;
         Account receiverAcc;
         if (senderAccountId.compareTo(receiverAccountId) < 0) {
-            senderAcc = findAccountBelongingToUserLocking(sender, receiverAccountId);
+            senderAcc = findAccountBelongingToUserLocking(sender, senderAccountId);
             receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
         } else {
             receiverAcc = accountRepository.findByAccountIdLocking(receiverAccountId)
                     .orElseThrow(() -> new ResourceNotFoundException("No account found for the receiver ID"));
-            senderAcc = findAccountBelongingToUserLocking(sender, receiverAccountId);
+            senderAcc = findAccountBelongingToUserLocking(sender, senderAccountId);
         }
 
         BigDecimal senderBalance =  balanceForAccount(senderAcc);
@@ -94,12 +97,24 @@ public class TransferService {
     }
 
     @Transactional
-    public Page<TransferInfoDto> getTransfers(AppUser user, String accountId, Pageable pageable){
+    public PageResponse<Transfer, TransferInfoDto> getTransfers(AppUser user, String accountId, int size, String cursor){
         Account acc = findAccountBelongingToUserLocking(user, accountId);
 
-        Page<Transfer> transfers = transferRepository.findAllTransfersForAccount(acc, pageable);
+        Limit limit = Limit.of(size+1);
+        List<Transfer> transfers;
+        Long longCursor;
 
-        return transfers.map(TransferInfoDto::from);
+        if(cursor != null && !cursor.isBlank()) {
+           longCursor = Long.parseLong(PageResponse.decode(cursor));
+        } else{
+            longCursor = null;
+        }
+
+        transfers = transferRepository.getTransfersPage(acc, longCursor, limit);
+
+        PageResponse<Transfer, TransferInfoDto> pageResponse = new PageResponse<>();
+        pageResponse.setPage(transfers, size);
+        return pageResponse;
     }
 
     private BigDecimal balanceForAccount(Account acc){
