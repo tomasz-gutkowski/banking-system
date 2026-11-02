@@ -11,6 +11,8 @@ import tgutkowski.project.backend.model.entities.Transfer;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.receiver = :account AND (t.status = 'PENDING' OR t.status = 'COMPLETED')")
@@ -22,6 +24,9 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT t FROM Transfer t WHERE t.sender = :account OR t.receiver = :account")
     Page<Transfer> findAllTransfersForAccount(@Param("account") Account account, Pageable pageable);
 
+    @Query("SELECT t.id FROM Transfer t WHERE (t.sender = :account OR t.receiver = :account) AND t.uuid = :cursor")
+    Optional<Long> getIdByCursor(@Param("account") Account account, @Param("cursor") UUID cursor);
+
     @Query("""
                 SELECT t
                 FROM Transfer t
@@ -29,5 +34,5 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
                 AND (:cursor IS NULL OR t.id <= :cursor)
                 ORDER BY t.id DESC
                 """)
-    List<Transfer> getTransfersPage(@Param("account") Account account, @Param("cursor") Long cursor,  Limit limit);
+    List<Transfer> getTransfersPage(@Param("account") Account account, @Param("cursor") Long cursorId, Limit limit);
 }

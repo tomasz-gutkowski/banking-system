@@ -21,6 +21,7 @@ import tgutkowski.project.backend.model.entities.Transfer;
 import tgutkowski.project.backend.service.TransferService;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/transfer/{accountId}")
@@ -58,12 +59,13 @@ public class TransferController {
                                              @PathVariable String accountId)
 
             {
+                //should be built in service class
         String receiverAccNum = request.receiver();
         BigDecimal amount = request.amount();
-        String id = transferService.transferMoney(appUser, accountId, receiverAccNum, amount);
+        UUID uuid = transferService.transferMoney(appUser, accountId, receiverAccNum, amount);
         String message = "Transfer completed successfully";
 
-        TransferResponse response = new TransferResponse(id, accountId, receiverAccNum, amount, message);
+        TransferResponse response = new TransferResponse(uuid, accountId, receiverAccNum, amount, message);
 
         return ResponseEntity
                 .ok()
@@ -79,7 +81,7 @@ public class TransferController {
                                                       message = "Not an eligible account id")
                                               @PathVariable String accountId,
                                                                 @RequestParam(defaultValue = "10") int size,
-                                                                @RequestParam(defaultValue = "") String cursor
+                                                                @RequestParam(required = false) UUID cursor
     ) {
         int sizeCapped = Math.min(size, 20);
 

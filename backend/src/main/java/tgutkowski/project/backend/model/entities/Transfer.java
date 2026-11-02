@@ -1,18 +1,24 @@
 package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.UuidGenerator;
 import tgutkowski.project.backend.model.dtos.responses.paging.Cursorable;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.entities.enums.TransferStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 public class Transfer implements Cursorable<TransferInfoDto>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @UuidGenerator
+    @Column(unique = true, nullable = false)
+    private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
@@ -28,6 +34,12 @@ public class Transfer implements Cursorable<TransferInfoDto>{
     public Long getId() {
         return id;
     }
+
+    public UUID getUUID() {
+        return uuid;
+    }
+
+    public void setUUID(UUID uuid) {}
 
     public Account getSender() {
         return sender;
@@ -78,7 +90,7 @@ public class Transfer implements Cursorable<TransferInfoDto>{
 
     @Override
     public String getAsCursor() {
-        return this.id.toString();
+        return this.uuid.toString();
     }
 
     @Override

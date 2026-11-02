@@ -5,9 +5,10 @@ import tgutkowski.project.backend.model.entities.enums.TransferStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record TransferInfoDto(
-        Long id,
+        UUID uuid,
         String senderAccountId,
         String receiverAccountId,
         BigDecimal amount,
@@ -17,7 +18,7 @@ public record TransferInfoDto(
 {
     public static TransferInfoDto from(Transfer transfer){
         return new TransferInfoDto(
-                transfer.getId(),
+                transfer.getUUID(),
                 transfer.getSender().getAccountId(),
                 transfer.getReceiver().getAccountId(),
                 transfer.getAmount(),

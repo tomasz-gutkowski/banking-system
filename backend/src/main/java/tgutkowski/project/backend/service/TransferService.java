@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
+import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
@@ -25,6 +26,7 @@ import tgutkowski.project.backend.repository.TransferRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TransferService {
@@ -67,7 +69,7 @@ public class TransferService {
     }
 
     @Transactional
-    public String transferMoney(AppUser sender, String senderAccountId, String receiverAccountId, BigDecimal amount) {
+    public UUID transferMoney(AppUser sender, String senderAccountId, String receiverAccountId, BigDecimal amount) {
         Account senderAcc;
         Account receiverAcc;
         if (senderAccountId.compareTo(receiverAccountId) < 0) {
@@ -92,25 +94,23 @@ public class TransferService {
         transfer.setStatus(TransferStatus.COMPLETED);
         transferRepository.save(transfer);
 
-        //TODO: currently returning transaction ID from database, but independent transaction identifier would work better
-        return transfer.getId().toString();
+        return transfer.getUUID();
     }
 
     @Transactional
-    public PageResponse<Transfer, TransferInfoDto> getTransfers(AppUser user, String accountId, int size, String cursor){
+    public PageResponse<Transfer, TransferInfoDto> getTransfers(AppUser user, String accountId, int size, UUID cursor){
         Account acc = findAccountBelongingToUserLocking(user, accountId);
 
         Limit limit = Limit.of(size+1);
         List<Transfer> transfers;
-        Long longCursor;
 
-        if(cursor != null && !cursor.isBlank()) {
-           longCursor = Long.parseLong(PageResponse.decode(cursor));
-        } else{
-            longCursor = null;
+        Long cursorId = null;
+        if (cursor != null) {
+            cursorId = transferRepository.getIdByCursor(acc, cursor)
+                    .orElseThrow(() -> new InvalidArgumentException("No such cursor for a user"));
         }
 
-        transfers = transferRepository.getTransfersPage(acc, longCursor, limit);
+        transfers = transferRepository.getTransfersPage(acc, cursorId, limit);
 
         PageResponse<Transfer, TransferInfoDto> pageResponse = new PageResponse<>();
         pageResponse.setPage(transfers, size);
