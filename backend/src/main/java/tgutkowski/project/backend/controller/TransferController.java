@@ -3,10 +3,6 @@ package tgutkowski.project.backend.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +20,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/transfer/{accountId}")
+@RequestMapping("/transfer")
 @Validated
 public class TransferController {
 
@@ -34,7 +30,7 @@ public class TransferController {
         this.transferService = transferService;
     }
 
-    @GetMapping("/balance")
+    @GetMapping("/balance/{accountId}")
     public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal AppUser appUser,
                                                  @NotBlank(message = "Sender is required")
                                                  @Pattern(regexp = "^ACC-\\d{8}$",
@@ -50,7 +46,7 @@ public class TransferController {
                 .body(response);
     }
 
-    @PostMapping("/transferTo")
+    @PostMapping("/transfer/{accountId}")
     public ResponseEntity<TransferResponse> transferTo(@AuthenticationPrincipal AppUser appUser,
                                              @Valid @RequestBody TransferRequest request,
                                              @NotBlank(message = "Sender is required")
@@ -74,17 +70,23 @@ public class TransferController {
     }
 
 
-    @GetMapping("/transfers")
-    public PageResponse<Transfer, TransferInfoDto> getTransfers(@AuthenticationPrincipal AppUser appUser,
+    @GetMapping("/transfers//{accountId}")
+    public ResponseEntity<PageResponse<Transfer, TransferInfoDto>> getTransfers(@AuthenticationPrincipal AppUser appUser,
                                                                 @NotBlank(message = "Sender is required")
-                                              @Pattern(regexp = "^ACC-\\d{8}$",
-                                                      message = "Not an eligible account id")
-                                              @PathVariable String accountId,
+                                              @                 Pattern(regexp = "^ACC-\\d{8}$",
+                                                                    message = "Not an eligible account id")
+                                                                @PathVariable String accountId,
                                                                 @RequestParam(defaultValue = "10") int size,
                                                                 @RequestParam(required = false) UUID cursor
     ) {
         int sizeCapped = Math.min(size, 20);
 
-        return transferService.getTransfers(appUser, accountId, sizeCapped, cursor);
+        PageResponse<Transfer, TransferInfoDto> response = transferService.getTransfers(appUser, accountId, sizeCapped, cursor);
+
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
     }
 }

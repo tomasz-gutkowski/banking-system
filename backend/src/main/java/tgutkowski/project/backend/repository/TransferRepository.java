@@ -21,9 +21,6 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.sender = :account")
     BigDecimal sumSent(@Param("account") Account account);
 
-    @Query("SELECT t FROM Transfer t WHERE t.sender = :account OR t.receiver = :account")
-    Page<Transfer> findAllTransfersForAccount(@Param("account") Account account, Pageable pageable);
-
     @Query("SELECT t.id FROM Transfer t WHERE (t.sender = :account OR t.receiver = :account) AND t.uuid = :cursor")
     Optional<Long> getIdByCursor(@Param("account") Account account, @Param("cursor") UUID cursor);
 
@@ -31,8 +28,8 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
                 SELECT t
                 FROM Transfer t
                 WHERE (t.sender = :account OR t.receiver = :account)
-                AND (:cursor IS NULL OR t.id <= :cursor)
+                AND (:cursorId IS NULL OR t.id <= :cursorId)
                 ORDER BY t.id DESC
                 """)
-    List<Transfer> getTransfersPage(@Param("account") Account account, @Param("cursor") Long cursorId, Limit limit);
+    List<Transfer> getTransfersPage(@Param("account") Account account, @Param("cursorId") Long cursorId, Limit limit);
 }

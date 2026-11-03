@@ -3,19 +3,21 @@ package tgutkowski.project.backend.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import tgutkowski.project.backend.model.dtos.requests.account.AccountClosureRequest;
-import tgutkowski.project.backend.model.dtos.requests.account.AccountFreezeRequest;
-import tgutkowski.project.backend.model.dtos.requests.account.AccountUnfreezeRequest;
-import tgutkowski.project.backend.model.dtos.requests.account.ClaimBonusRequest;
+import tgutkowski.project.backend.model.dtos.requests.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.*;
+import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
+import tgutkowski.project.backend.model.entities.AccountStatusChangeLog;
 import tgutkowski.project.backend.model.entities.AppUser;
+import tgutkowski.project.backend.model.entities.enums.StatusChange;
 import tgutkowski.project.backend.service.AccountService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/account")
@@ -60,13 +62,17 @@ public class AccountController {
                 .body(response);
     }
 
-    @PostMapping("/close")
-    public ResponseEntity<AccountClosureResponse> closeAccount(@AuthenticationPrincipal AppUser appUser,
-                                                @Valid @RequestBody AccountClosureRequest request){
-        String accountId = request.accountId();
+    @PostMapping("/change-status/{accountId}")
+    public ResponseEntity<AccountStatusChangeResponse> changeAccountStatus(@AuthenticationPrincipal AppUser appUser,
+                                                                           @NotBlank(message = "Sender is required")
+                                                                           @Pattern(regexp = "^ACC-\\d{8}$",
+                                                                                   message = "Not an eligible account id")
+                                                                           @PathVariable String accountId,
+                                                                           @Valid @RequestBody AccountStatusChangeRequest request){
+        StatusChange statusChange = request.statusChange();
         String reason = request.reason();
 
-        AccountClosureResponse response = accountService.closeAccount(appUser, accountId, reason);
+        AccountStatusChangeResponse response = accountService.changeAccountStatus(appUser, accountId, statusChange, reason);
 
         return ResponseEntity
                 .ok()
@@ -74,26 +80,16 @@ public class AccountController {
                 .body(response);
     }
 
-    @PostMapping("/freeze")
-    public ResponseEntity<AccountFreezeResponse> freezeAccount(@AuthenticationPrincipal AppUser appUser,
-                                          @Valid @RequestBody AccountFreezeRequest request){
-        String accountId = request.accountId();
-        String reason = request.reason();
-
-        AccountFreezeResponse response = accountService.freezeAccount(appUser, accountId, reason);
-
-        return ResponseEntity
-                .ok()
-                .header("Content-Type", "application/json")
-                .body(response);
-    }
-
-    @PostMapping("/unfreeze")
-    public ResponseEntity<AccountUnfreezeResponse> unfreezeAccount(@AuthenticationPrincipal AppUser appUser,
-                                            @Valid @RequestBody AccountUnfreezeRequest request){
-        String accountId = request.accountId();
-
-        AccountUnfreezeResponse response = accountService.unfreezeAccount(appUser, accountId);
+    @GetMapping("/status-change-logs/{accountId}")
+    public ResponseEntity<PageResponse<AccountStatusChangeLog,AccountStatusChangeLogInfoDto>> getStatusChangeLog(@AuthenticationPrincipal AppUser appUser,
+                                                                                                                 @NotBlank(message = "Sender is required")
+                                                                                                                 @Pattern(regexp = "^ACC-\\d{8}$",
+                                                                                                                    message = "Not an eligible account id")
+                                                                                                                 @PathVariable String accountId,
+                                                                                                                 @RequestParam(defaultValue = "10") int size,
+                                                                                                                 @RequestParam(required = false) UUID cursor){
+        int sizeCapped = Math.min(size, 10);
+        PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> response = accountService.getChangeLogs(appUser, accountId, sizeCapped, cursor);
 
         return ResponseEntity
                 .ok()
@@ -101,12 +97,14 @@ public class AccountController {
                 .body(response);
     }
 
+    //todo: fix bonus can be claimed by closed account
     @PreAuthorize("hasRole('USER')")
-    @PostMapping("/claim-bonus")
+    @PostMapping("/claim-bonus/{accountId}")
     public ResponseEntity<ClaimBonusResponse> claimBonus(@AuthenticationPrincipal AppUser appUser,
-                                                         @Valid @RequestBody ClaimBonusRequest request){
-        String accountId = request.accountId();
-
+                                                         @NotBlank(message = "Sender is required")
+                                                         @Pattern(regexp = "^ACC-\\d{8}$",
+                                                                 message = "Not an eligible account id")
+                                                         @PathVariable String accountId){
         ClaimBonusResponse response = accountService.claimBonus(appUser, accountId);
 
 

@@ -5,8 +5,6 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
@@ -46,6 +44,11 @@ public class TransferService {
 
     private Account findAccountBelongingToUserLocking(AppUser user, String accountId) {
         return accountRepository.findByOwnerAndAccountIdLocking(user, accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and ID"));
+    }
+
+    private Account findAccountBelongingToUser(AppUser user, String accountId) {
+        return accountRepository.findByOwnerAndAccountId(user, accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the user and ID"));
     }
 
@@ -99,23 +102,24 @@ public class TransferService {
 
     @Transactional
     public PageResponse<Transfer, TransferInfoDto> getTransfers(AppUser user, String accountId, int size, UUID cursor){
-        Account acc = findAccountBelongingToUserLocking(user, accountId);
+        Account acc = findAccountBelongingToUser(user, accountId);
 
         Limit limit = Limit.of(size+1);
-        List<Transfer> transfers;
 
         Long cursorId = null;
         if (cursor != null) {
             cursorId = transferRepository.getIdByCursor(acc, cursor)
-                    .orElseThrow(() -> new InvalidArgumentException("No such cursor for a user"));
+                    .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
         }
 
-        transfers = transferRepository.getTransfersPage(acc, cursorId, limit);
+        List<Transfer> transfers = transferRepository.getTransfersPage(acc, cursorId, limit);
 
         PageResponse<Transfer, TransferInfoDto> pageResponse = new PageResponse<>();
         pageResponse.setPage(transfers, size);
         return pageResponse;
     }
+
+
 
     private BigDecimal balanceForAccount(Account acc){
         BigDecimal sent = transferRepository.sumSent(acc);

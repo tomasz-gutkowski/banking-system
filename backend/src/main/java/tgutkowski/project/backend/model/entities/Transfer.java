@@ -39,8 +39,6 @@ public class Transfer implements Cursorable<TransferInfoDto>{
         return uuid;
     }
 
-    public void setUUID(UUID uuid) {}
-
     public Account getSender() {
         return sender;
     }

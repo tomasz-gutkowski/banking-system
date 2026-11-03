@@ -1,20 +1,25 @@
 package tgutkowski.project.backend.model.entities;
 
 import jakarta.persistence.*;
-import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeRequestInfoDto;
+import org.hibernate.annotations.UuidGenerator;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.paging.Cursorable;
-import tgutkowski.project.backend.model.entities.enums.AccountStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionType;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-public class AccountStatusChangeRequest implements Cursorable<AccountStatusChangeRequestInfoDto>{
+public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLogInfoDto>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @UuidGenerator
+    @Column(unique = true, nullable = false, updatable = false)
+    private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, updatable = false)
@@ -50,6 +55,10 @@ public class AccountStatusChangeRequest implements Cursorable<AccountStatusChang
 
     public Long getId() {
         return id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
     }
 
     public LocalDateTime getRequestDate() {
@@ -130,11 +139,11 @@ public class AccountStatusChangeRequest implements Cursorable<AccountStatusChang
 
     @Override
     public String getAsCursor() {
-        return this.id.toString();
+        return this.uuid.toString();
     }
 
     @Override
-    public AccountStatusChangeRequestInfoDto convertToDTO() {
-        return AccountStatusChangeRequestInfoDto.from(this);
+    public AccountStatusChangeLogInfoDto convertToDTO() {
+        return AccountStatusChangeLogInfoDto.from(this);
     }
 }
