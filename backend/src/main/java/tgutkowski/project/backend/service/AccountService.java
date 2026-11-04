@@ -94,9 +94,13 @@ public class AccountService {
         String message;
 
         if(owner.getBonusStatus().equals(BonusStatus.AVAILABLE)){
-            Account userAccount = findAccountBelongingToUser(user, accountId);
+            Account userAccount = findAccountBelongingToUserLocking(user, accountId);
             Account sysAccount = accountRepository.findByAccountId(systemAccountId)
                     .orElseThrow(() -> new InternalException("There was a problem with your request"));
+
+            if(userAccount.getAccountStatus().equals(AccountStatus.CLOSED)){
+                throw new ConflictException("Your account is closed");
+            }
 
             transferService.claimBonusTransfer(userAccount, sysAccount);
 
@@ -216,8 +220,10 @@ public class AccountService {
     }
 
     @Transactional
-    public PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> getChangeLogs(AppUser user, String accountId, int size, UUID cursor) {
-        //todo here and in transfer locks are obsolete for these methods
+    public PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> getChangeLogs(AppUser user,
+                                                                                             String accountId,
+                                                                                             int size,
+                                                                                             UUID cursor) {
         Account account;
         if(user.getRole() == Roles.ADMIN) account = findAccountByAccountId(accountId);
         else account = findAccountBelongingToUser(user, accountId);
@@ -227,7 +233,7 @@ public class AccountService {
 
         Long cursorId = null;
         if(cursor != null){
-            cursorId = accountStatusChangeLogRepository.getIdByCursor(account, cursor)
+            cursorId = accountStatusChangeLogRepository.getIdByAccountAndCursor(account, cursor)
                     .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
         }
 
@@ -238,6 +244,69 @@ public class AccountService {
         pageResponse.setPage(accountStatusChangeLogs,size);
 
         return pageResponse;
+    }
+
+    @Transactional
+    public PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> getChangeTickets(StatusChange requestType,
+                                                                                                ResolutionStatus resolutionStatus,
+                                                                                                int size,
+                                                                                                UUID cursor) {
+        Limit limit = Limit.of(size+1);
+
+        Long cursorId = null;
+        if(cursor != null){
+            cursorId = accountStatusChangeLogRepository.getIdByCursor(cursor)
+                    .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
+        }
+
+        List<AccountStatusChangeLog> accountStatusChangeLogs = accountStatusChangeLogRepository.getLogsTicketPage(requestType, resolutionStatus, cursorId, limit);
+
+        PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> pageResponse = new PageResponse<>();
+        pageResponse.setPage(accountStatusChangeLogs,size);
+
+        return pageResponse;
+    }
+
+    @Transactional
+    public AccountStatusChangeLogInfoDto resolveTicket(AppUser user, UUID uuid, ResolutionStatus resolutionStatus) {
+        AccountStatusChangeLog ascl = accountStatusChangeLogRepository.findByUuidLocking(uuid)
+                .orElseThrow(() -> new InvalidArgumentException("No ticket with selected UUID"));
+
+        String accountId = ascl.getAccount().getAccountId();
+
+        Account account = accountRepository.findByAccountIdLocking(accountId)
+                .orElseThrow(() -> new InternalException("No account assigned to a ticket"));
+
+        if(!ascl.getResolutionStatus().equals(ResolutionStatus.PENDING)) throw new ConflictException("Selected ticket already resolved");
+
+        if(!resolutionStatus.equals(ResolutionStatus.ACCEPTED) && !resolutionStatus.equals(ResolutionStatus.DECLINED))
+            throw new InvalidArgumentException("Invalid resolution");
+
+        if(!ascl.getResolutionType().equals(ResolutionType.MANUAL)) throw new InvalidArgumentException("Invalid resolution type");
+
+        switch(ascl.getRequestType()){
+            case CLOSE:{
+                if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Account status not matching request");
+                if(resolutionStatus.equals(ResolutionStatus.ACCEPTED)) account.setStatus(AccountStatus.CLOSED);
+                break;
+            }
+            case FREEZE:{
+                if(!account.getAccountStatus().equals(AccountStatus.ACTIVE)) throw new ConflictException("Account status not matching request");
+                if(resolutionStatus.equals(ResolutionStatus.ACCEPTED)) account.setStatus(AccountStatus.FROZEN);
+                break;
+            }
+            case UNFREEZE:{
+                if(!account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account status not matching request");
+                if(resolutionStatus.equals(ResolutionStatus.ACCEPTED)) account.setStatus(AccountStatus.ACTIVE);
+                break;
+            }
+        }
+        LocalDateTime now = LocalDateTime.now();
+        ascl.setResolutionDate(now);
+        ascl.setResolvedBy(user);
+        ascl.setResolutionStatus(resolutionStatus);
+
+        return ascl.convertToDTO();
     }
 
     private Account buildAccount(AppUser owner) {
@@ -266,4 +335,7 @@ public class AccountService {
         }
         return sb.toString();
     }
+
+
+
 }

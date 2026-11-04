@@ -43,7 +43,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
     private ResolutionType resolutionType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = true, updatable = false)
+    @JoinColumn(nullable = true)
     private AppUser resolvedBy;
 
     @Enumerated(EnumType.STRING)

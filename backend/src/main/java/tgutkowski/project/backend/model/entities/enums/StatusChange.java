@@ -1,7 +1,8 @@
 package tgutkowski.project.backend.model.entities.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
 public enum StatusChange {
     FREEZE(1),
@@ -23,5 +24,13 @@ public enum StatusChange {
             }
         }
         return null;
+    }
+
+    @Component
+    public static class StatusChangeConverter implements Converter<String, StatusChange> {
+        @Override
+        public StatusChange convert(String source) {
+            return fromValue(source);
+        }
     }
 }

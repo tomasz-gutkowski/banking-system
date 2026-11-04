@@ -3,7 +3,6 @@ package tgutkowski.project.backend.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +12,7 @@ import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.entities.AccountStatusChangeLog;
 import tgutkowski.project.backend.model.entities.AppUser;
+import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
 import tgutkowski.project.backend.service.AccountService;
 
@@ -97,7 +97,35 @@ public class AccountController {
                 .body(response);
     }
 
-    //todo: fix bonus can be claimed by closed account
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/status-change-logs/tickets")
+    public ResponseEntity<PageResponse<AccountStatusChangeLog,AccountStatusChangeLogInfoDto>> getStatusChangeTickets(@RequestParam(required = false) StatusChange requestType,
+                                                                                                                     @RequestParam(required = false) ResolutionStatus resolutionStatus,
+                                                                                                                     @RequestParam(defaultValue = "10") int size,
+                                                                                                                     @RequestParam(required = false) UUID cursor){
+        int sizeCapped = Math.min(size, 10);
+        PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> response = accountService.getChangeTickets(requestType, resolutionStatus, sizeCapped, cursor);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/status-change-logs/ticket/resolve")
+    public ResponseEntity<AccountStatusChangeLogInfoDto> resolveTicket(@AuthenticationPrincipal AppUser appUser,
+                                                                        @Valid @RequestBody AccountStatusChangeResolutionRequest request){
+        UUID uuid = UUID.fromString(request.uuid());
+        ResolutionStatus resolutionStatus = request.resolutionStatus();
+
+        AccountStatusChangeLogInfoDto response = accountService.resolveTicket(appUser, uuid, resolutionStatus);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
+
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/claim-bonus/{accountId}")
     public ResponseEntity<ClaimBonusResponse> claimBonus(@AuthenticationPrincipal AppUser appUser,
