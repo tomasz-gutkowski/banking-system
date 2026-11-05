@@ -1,8 +1,6 @@
 package tgutkowski.project.backend.model.dtos.responses.paging;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PageResponse<T extends Cursorable<D>, D>{
     private List<D> data;
@@ -19,18 +17,8 @@ public class PageResponse<T extends Cursorable<D>, D>{
         }
         else{
             this.data = list.subList(0, expectedLength).stream().map(Cursorable::convertToDTO).toList();
-            this.cursor = encode(list.get(expectedLength).getAsCursor());
+            this.cursor = list.get(expectedLength).getAsCursor();
         }
-    }
-
-    public static String encode(String cursor){
-        //todo after done with debug
-        return cursor;
-    }
-
-    public static String decode(String cursor){
-        // todo after done with debug
-        return cursor;
     }
 
     public List<D> getData() {
