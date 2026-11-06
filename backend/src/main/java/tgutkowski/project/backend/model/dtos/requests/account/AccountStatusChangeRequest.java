@@ -7,11 +7,6 @@ import jakarta.validation.constraints.Pattern;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
 
 public record AccountStatusChangeRequest(
-        @NotBlank(message = "Sender is required")
-        @Pattern(regexp = "^ACC-\\d{8}$",
-                message = "Not an eligible account id")
-        String accountId,
-
         @Nullable
         String reason,
 

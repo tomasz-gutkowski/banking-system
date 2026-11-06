@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InternalException.class)
-    public ResponseEntity<ExceptionResponse> handleUnexpected(UnexpectedException e, HttpServletRequest request) {
+    public ResponseEntity<ExceptionResponse> handleUnexpected(InternalException e, HttpServletRequest request) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), request);
     }
 

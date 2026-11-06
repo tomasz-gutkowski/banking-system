@@ -66,7 +66,7 @@ public class TransferService {
 
     @Transactional
     public BigDecimal getBalance(AppUser appUser, String accountId) {
-        Account account = findAccountBelongingToUserLocking(appUser, accountId);
+        Account account = findAccountBelongingToUser(appUser, accountId);
 
         return balanceForAccount(account);
     }
@@ -122,8 +122,9 @@ public class TransferService {
 
 
     private BigDecimal balanceForAccount(Account acc){
+        List<TransferStatus> acceptedReceiverStatuses = List.of(TransferStatus.COMPLETED, TransferStatus.PENDING);
         BigDecimal sent = transferRepository.sumSent(acc);
-        BigDecimal received = transferRepository.sumReceived(acc);
+        BigDecimal received = transferRepository.sumReceived(acc, acceptedReceiverStatuses);
 
         return received.subtract(sent);
     }

@@ -12,10 +12,9 @@ import tgutkowski.project.backend.model.entities.enums.AccountStatus;
 import java.util.List;
 import java.util.Optional;
 
-public interface AccountRepository extends JpaRepository<Account, Integer> {
+public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByAccountId(String accountId);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Account> findByOwnerAndAccountId(AppUser owner, String accountId);
 
     boolean existsByAccountId(String accountId);

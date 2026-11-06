@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.account.*;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@EnableMethodSecurity
 @RequestMapping("/account")
 public class AccountController {
 

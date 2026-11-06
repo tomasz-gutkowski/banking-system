@@ -17,8 +17,8 @@ import java.util.UUID;
 
 public interface AccountStatusChangeLogRepository extends JpaRepository<AccountStatusChangeLog, Long> {
 
-    @Query("SELECT COUNT(*)>0 FROM AccountStatusChangeLog r WHERE r.account = :account AND r.requestType = 'UNFREEZE' AND r.resolutionStatus = 'PENDING'")
-    boolean existsActiveUnfreezeRequests(@Param("account") Account account);
+    @Query("SELECT COUNT(*)>0 FROM AccountStatusChangeLog r WHERE r.account = :account AND r.requestType = :requestType AND r.resolutionStatus = :resolutionStatus")
+    boolean existsActiveRequestsOfTypeWithStatus(@Param("account") Account account, @Param("requestType") StatusChange requestType,  @Param("resolutionStatus") ResolutionStatus resolutionStatus);
 
 
     @Query("SELECT ascl.id FROM AccountStatusChangeLog ascl WHERE ascl.account = :account AND ascl.uuid = :cursor")

@@ -39,6 +39,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
     @Column(nullable = false)
     private LocalDateTime requestDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ResolutionType resolutionType;
 

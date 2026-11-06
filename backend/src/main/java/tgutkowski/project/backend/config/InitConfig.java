@@ -39,7 +39,7 @@ public class InitConfig {
     }
 
     private void addAdminUser(AppUserRepository repository, PasswordEncoder passwordEncoder) {
-        if(repository.findByUsername("admin").isEmpty()) {
+        if(repository.findByUsername(adminUsername).isEmpty()) {
             AppUser admin = new AppUser();
             admin.setUsername(adminUsername);
             admin.setPassword(passwordEncoder.encode(adminPassword));

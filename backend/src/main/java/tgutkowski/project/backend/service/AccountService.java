@@ -146,17 +146,22 @@ public class AccountService {
 
         switch(statusChange) {
             case CLOSE:{
-                if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Account is already closed");
+                if(account.getAccountStatus().equals(AccountStatus.CLOSED))
+                    throw new ConflictException("Account is already closed");
                 break;
             }
             case FREEZE:{
-                if(account.getAccountStatus().equals(AccountStatus.CLOSED)) throw new ConflictException("Cannot freeze closed account");
-                if(account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is already frozen");
+                if(account.getAccountStatus().equals(AccountStatus.CLOSED))
+                    throw new ConflictException("Cannot freeze closed account");
+                if(account.getAccountStatus().equals(AccountStatus.FROZEN))
+                    throw new ConflictException("Account is already frozen");
                 break;
             }
             case UNFREEZE:{
-                if(!account.getAccountStatus().equals(AccountStatus.FROZEN)) throw new ConflictException("Account is not frozen");
-                if(asclRepository.existsActiveUnfreezeRequests(account)) throw new ConflictException("Unfreeze request is already pending");
+                if(!account.getAccountStatus().equals(AccountStatus.FROZEN))
+                    throw new ConflictException("Account is not frozen");
+                if(asclRepository.existsActiveRequestsOfTypeWithStatus(account, StatusChange.UNFREEZE, ResolutionStatus.PENDING))
+                    throw new ConflictException("Unfreeze request is already pending");
                 break;
             }
         }

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +21,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
+@EnableMethodSecurity
 @RequestMapping("/transfer")
-@Validated
 public class TransferController {
 
     private final TransferService transferService;
@@ -54,8 +55,7 @@ public class TransferController {
                                                      message = "Not an eligible account id")
                                              @PathVariable String accountId)
 
-            {
-                //should be built in service class
+    {
         String receiverAccNum = request.receiver();
         BigDecimal amount = request.amount();
         UUID uuid = transferService.transferMoney(appUser, accountId, receiverAccNum, amount);
@@ -70,10 +70,10 @@ public class TransferController {
     }
 
 
-    @GetMapping("/transfers//{accountId}")
+    @GetMapping("/transfers/{accountId}")
     public ResponseEntity<PageResponse<Transfer, TransferInfoDto>> getTransfers(@AuthenticationPrincipal AppUser appUser,
                                                                 @NotBlank(message = "Sender is required")
-                                              @                 Pattern(regexp = "^ACC-\\d{8}$",
+                                                                @Pattern(regexp = "^ACC-\\d{8}$",
                                                                     message = "Not an eligible account id")
                                                                 @PathVariable String accountId,
                                                                 @RequestParam(defaultValue = "10") int size,
