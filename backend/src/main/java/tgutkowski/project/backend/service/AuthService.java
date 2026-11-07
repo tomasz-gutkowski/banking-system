@@ -2,6 +2,7 @@ package tgutkowski.project.backend.service;
 
 
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.InvalidCredentialsException;
 import tgutkowski.project.backend.exceptions.InvalidTokenException;
 import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
+import tgutkowski.project.backend.model.dtos.responses.auth.LogoutResponse;
 import tgutkowski.project.backend.model.dtos.responses.auth.RefreshResponse;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.model.entities.enums.Roles;
@@ -78,7 +80,11 @@ public class AuthService {
         appUser.setUsername(username);
         appUser.setPassword(passwordEncoder.encode(password));
         appUser.setRole(Roles.USER);
-        appUserRepository.save(appUser);
+        try {
+            appUserRepository.save(appUser);
+        }catch(DataIntegrityViolationException e){
+            throw new ConflictException("Username already taken");
+        }
     }
 
     public RefreshResponse refreshJwt(String refreshToken) {
@@ -93,4 +99,11 @@ public class AuthService {
 
         return new RefreshResponse(jwt, message);
     }
+
+    public LogoutResponse logout(String token) {
+        refreshTokenStore.invalidateToken(token);
+        String message = "Logout successful";
+        return new LogoutResponse(message);
+    }
 }
+

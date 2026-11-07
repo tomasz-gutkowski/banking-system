@@ -3,6 +3,7 @@ package tgutkowski.project.backend.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -103,6 +104,7 @@ public class AccountController {
     @GetMapping("/status-change-logs/tickets")
     public ResponseEntity<PageResponse<AccountStatusChangeLog,AccountStatusChangeLogInfoDto>> getStatusChangeTickets(@RequestParam(required = false) StatusChange requestType,
                                                                                                                      @RequestParam(required = false) ResolutionStatus resolutionStatus,
+                                                                                                                     @Size(min = 1)
                                                                                                                      @RequestParam(defaultValue = "10") int size,
                                                                                                                      @RequestParam(required = false) UUID cursor){
         int sizeCapped = Math.min(size, 10);

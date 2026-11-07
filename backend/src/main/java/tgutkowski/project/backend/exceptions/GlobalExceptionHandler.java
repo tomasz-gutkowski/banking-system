@@ -8,7 +8,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.rmi.UnexpectedException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccountNotEligibleException.class)
     public ResponseEntity<ExceptionResponse> handleAccountNotEligible(AccountNotEligibleException e, HttpServletRequest request) {
-        return build(HttpStatus.METHOD_NOT_ALLOWED, e.getMessage(), request);
+        return build(HttpStatus.CONFLICT, e.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

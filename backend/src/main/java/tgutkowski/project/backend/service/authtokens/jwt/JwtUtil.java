@@ -3,6 +3,7 @@ package tgutkowski.project.backend.service.authtokens.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -18,12 +19,18 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
+    private SecretKey signingKey;
+
     @Value("${jwt.expiration}")
     private long expiration;
 
-    private SecretKey getSigningKey(){
+    @PostConstruct
+    public void init() {
+        if (this.secret == null || this.secret.length() < 32) {
+            throw new IllegalStateException("JWT secret required to be at least 32 characters long, substitute JWT_SECRET in .env with proper value");
+        }
         byte[] encodedKey = Base64.getEncoder().encode(secret.getBytes());
-        return Keys.hmacShaKeyFor(encodedKey);
+        this.signingKey = Keys.hmacShaKeyFor(encodedKey);
     }
 
     public String generateToken(AppUser appUser) {
@@ -35,7 +42,7 @@ public class JwtUtil {
                         .toList())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expiration))
-                .signWith(getSigningKey())
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -45,7 +52,7 @@ public class JwtUtil {
 
     public Claims extractClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

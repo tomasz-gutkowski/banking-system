@@ -121,7 +121,7 @@ public class TransferService {
 
 
 
-    private BigDecimal balanceForAccount(Account acc){
+    public BigDecimal balanceForAccount(Account acc){
         List<TransferStatus> acceptedReceiverStatuses = List.of(TransferStatus.COMPLETED, TransferStatus.PENDING);
         BigDecimal sent = transferRepository.sumSent(acc);
         BigDecimal received = transferRepository.sumReceived(acc, acceptedReceiverStatuses);

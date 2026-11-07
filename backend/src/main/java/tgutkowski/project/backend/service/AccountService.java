@@ -2,6 +2,7 @@ package tgutkowski.project.backend.service;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,16 @@ import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AccountStatusChangeLogRepository;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
+import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
 public class AccountService {
     private final AccountStatusChangeLogRepository accountStatusChangeLogRepository;
+
     @Value("${system.account.id}")
     private String systemAccountId;
 
@@ -75,9 +78,24 @@ public class AccountService {
         if(accountRepository.existsByOwner(owner, accountStatuses))
             throw new ConflictException("Account already exists");
 
-        Account account = buildAccount(owner);
+        Account account = buildAccountWithNoId(owner);
 
-        accountRepository.save(account);
+        String accountId = generateUniqueAccountId();
+
+        int retries = 100;
+
+        while (retries > 0) {
+            try{
+                account.setAccountId(accountId);
+                accountRepository.save(account);
+                break;
+            }catch(DataIntegrityViolationException e){
+                retries--;
+                if(retries == 0) throw new InternalException("Account creation failed");
+                accountId = generateUniqueAccountId();
+            }
+        }
+
 
         String message = "Account created successfully";
 
@@ -148,6 +166,10 @@ public class AccountService {
             case CLOSE:{
                 if(account.getAccountStatus().equals(AccountStatus.CLOSED))
                     throw new ConflictException("Account is already closed");
+                if(account.getAccountStatus().equals(AccountStatus.FROZEN))
+                    throw new ConflictException("Cannot close a frozen account");
+                if(!(transferService.balanceForAccount(account).compareTo(BigDecimal.ZERO) == 0))
+                    throw new ConflictException("Account balance has to be equal to zero before closure");
                 break;
             }
             case FREEZE:{
@@ -314,10 +336,9 @@ public class AccountService {
         return ascl.convertToDTO();
     }
 
-    private Account buildAccount(AppUser owner) {
+    private Account buildAccountWithNoId(AppUser owner) {
         Account account = new Account();
         account.setOwner(owner);
-        account.setAccountId(generateUniqueAccountId());
         account.setStatus(AccountStatus.ACTIVE);
         account.setType(AccountType.USER);
         return account;
@@ -332,7 +353,7 @@ public class AccountService {
     }
 
     private String generateAccountId(){
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder();
         sb.append("ACC-");
         for(int i = 0; i < 8; i++){

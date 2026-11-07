@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.exceptions.InvalidTokenException;
 import tgutkowski.project.backend.model.dtos.requests.auth.LoginRequest;
 import tgutkowski.project.backend.model.dtos.requests.auth.RegisterRequest;
 import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
+import tgutkowski.project.backend.model.dtos.responses.auth.LogoutResponse;
 import tgutkowski.project.backend.model.dtos.responses.auth.RefreshResponse;
 import tgutkowski.project.backend.model.dtos.responses.auth.RegisterResponse;
 import tgutkowski.project.backend.service.AuthService;
@@ -82,6 +82,23 @@ public class AuthController {
                 .body(refreshResponse);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponse> logout(@CookieValue(name = "refresh_token", required = false) String refreshToken){
+        if (refreshToken == null) {
+            throw new InvalidTokenException("Invalid or expired token");
+        }
+
+        ResponseCookie cookie = getLogoutCookie();
+
+        LogoutResponse response = authService.logout(refreshToken);
+
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
+
     private ResponseCookie getRefreshTokenCookie(String refreshToken) {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
@@ -89,6 +106,16 @@ public class AuthController {
                 .sameSite("Strict")
                 .path("/auth")
                 .maxAge(Duration.ofSeconds(refreshTokenExpiration))
+                .build();
+    }
+
+    private ResponseCookie getLogoutCookie(){
+        return ResponseCookie.from("refresh_token", null)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/auth")
+                .maxAge(0)
                 .build();
     }
 

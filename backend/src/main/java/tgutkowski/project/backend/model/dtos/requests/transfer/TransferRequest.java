@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 public record TransferRequest(
     @NotNull(message = "Transfer amount required")
     @Positive(message = "Transfer amount has to be positive")
-    @Digits(integer = 12 , fraction = 0, message = "Amount format is invalid")
+    @Digits(integer = 12 , fraction = 2, message = "Amount format is invalid")
     BigDecimal amount,
 
     @NotBlank(message = "Receiver is required")
