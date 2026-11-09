@@ -17,8 +17,8 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.receiver = :account AND (t.status IN :statuses)")
     BigDecimal sumReceived(@Param("account") Account account, @Param("statuses")  List<TransferStatus> statuses);
 
-    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.sender = :account")
-    BigDecimal sumSent(@Param("account") Account account);
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transfer t WHERE t.sender = :account AND (t.status IN :statuses)")
+    BigDecimal sumSent(@Param("account") Account account, @Param("statuses") List<TransferStatus> statuses);
 
     @Query("SELECT t.id FROM Transfer t WHERE (t.sender = :account OR t.receiver = :account) AND t.uuid = :cursor")
     Optional<Long> getIdByCursor(@Param("account") Account account, @Param("cursor") UUID cursor);

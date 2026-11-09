@@ -1,11 +1,12 @@
 package tgutkowski.project.backend.service;
 
-import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InternalException;
 import tgutkowski.project.backend.exceptions.InvalidArgumentException;
@@ -28,20 +29,19 @@ import java.util.UUID;
 
 @Service
 public class AccountService {
-    private final AccountStatusChangeLogRepository accountStatusChangeLogRepository;
+
 
     @Value("${system.account.id}")
     private String systemAccountId;
 
     private final AccountRepository accountRepository;
     private final AppUserRepository appUserRepository;
-    private final AccountStatusChangeLogRepository asclRepository;
     private final TransferService transferService;
+    private final AccountStatusChangeLogRepository accountStatusChangeLogRepository;
 
-    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository, AccountStatusChangeLogRepository asclRepository, TransferService transferService, AccountStatusChangeLogRepository accountStatusChangeLogRepository) {
+    public AccountService(AccountRepository accountRepository, AppUserRepository appUserRepository, TransferService transferService, AccountStatusChangeLogRepository accountStatusChangeLogRepository) {
         this.accountRepository = accountRepository;
         this.appUserRepository = appUserRepository;
-        this.asclRepository = asclRepository;
         this.transferService = transferService;
         this.accountStatusChangeLogRepository = accountStatusChangeLogRepository;
     }
@@ -136,7 +136,7 @@ public class AccountService {
         return new ClaimBonusResponse(accountId, message);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<AccountStatusResponse> getAccountsStatusList(AppUser user){
         List<Account> accounts = accountRepository.findAllByOwner(user);
         return accounts.stream()
@@ -144,7 +144,7 @@ public class AccountService {
                 .toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AccountStatusResponse getAccountStatus(AppUser user, String accountId){
         Account account;
 
@@ -182,7 +182,7 @@ public class AccountService {
             case UNFREEZE:{
                 if(!account.getAccountStatus().equals(AccountStatus.FROZEN))
                     throw new ConflictException("Account is not frozen");
-                if(asclRepository.existsActiveRequestsOfTypeWithStatus(account, StatusChange.UNFREEZE, ResolutionStatus.PENDING))
+                if(accountStatusChangeLogRepository.existsActiveRequestsOfTypeWithStatus(account, StatusChange.UNFREEZE, ResolutionStatus.PENDING))
                     throw new ConflictException("Unfreeze request is already pending");
                 break;
             }
@@ -241,12 +241,12 @@ public class AccountService {
                 break;
             }
         }
-        asclRepository.save(ascl);
+        accountStatusChangeLogRepository.save(ascl);
 
         return new AccountStatusChangeResponse(account.getAccountId(), message);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> getChangeLogs(AppUser user,
                                                                                              String accountId,
                                                                                              int size,
@@ -273,7 +273,7 @@ public class AccountService {
         return pageResponse;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> getChangeTickets(StatusChange requestType,
                                                                                                 ResolutionStatus resolutionStatus,
                                                                                                 int size,

@@ -1,11 +1,11 @@
 package tgutkowski.project.backend.service;
 
-import jakarta.transaction.Transactional;
 
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
 import tgutkowski.project.backend.exceptions.InvalidArgumentException;
@@ -64,7 +64,7 @@ public class TransferService {
         transferRepository.save(transfer);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public BigDecimal getBalance(AppUser appUser, String accountId) {
         Account account = findAccountBelongingToUser(appUser, accountId);
 
@@ -100,7 +100,7 @@ public class TransferService {
         return transfer.getUUID();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PageResponse<Transfer, TransferInfoDto> getTransfers(AppUser user, String accountId, int size, UUID cursor){
         Account acc = findAccountBelongingToUser(user, accountId);
 
@@ -123,7 +123,7 @@ public class TransferService {
 
     public BigDecimal balanceForAccount(Account acc){
         List<TransferStatus> acceptedReceiverStatuses = List.of(TransferStatus.COMPLETED, TransferStatus.PENDING);
-        BigDecimal sent = transferRepository.sumSent(acc);
+        BigDecimal sent = transferRepository.sumSent(acc, acceptedReceiverStatuses);
         BigDecimal received = transferRepository.sumReceived(acc, acceptedReceiverStatuses);
 
         return received.subtract(sent);

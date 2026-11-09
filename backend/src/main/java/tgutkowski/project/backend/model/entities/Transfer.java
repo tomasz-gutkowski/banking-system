@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(indexes = {
+        @Index(name="idx_account_sender" ,columnList = "sender_id"),
+        @Index(name="idx_account_receiver" ,columnList = "receiver_id")
+})
 public class Transfer implements Cursorable<TransferInfoDto>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,11 +25,11 @@ public class Transfer implements Cursorable<TransferInfoDto>{
     private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
     private Account sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "receiver_id", referencedColumnName = "id", nullable = false)
     private Account receiver;
 
     @Column(nullable = false, precision = 19, scale = 2)

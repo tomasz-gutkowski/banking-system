@@ -24,10 +24,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByOwnerAndAccountId(AppUser owner, String accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT a FROM Account a WHERE a.owner = :owner")
-    Optional<Account> findByOwnerLocking(@Param("owner") AppUser owner);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Account a WHERE a.owner = :owner AND a.accountId = :accountId")
     Optional<Account> findByOwnerAndAccountIdLocking(@Param("owner") AppUser owner, @Param("accountId") String accountId);
 

@@ -1,11 +1,12 @@
 package tgutkowski.project.backend.service;
 
 
-import jakarta.transaction.Transactional;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.InvalidCredentialsException;
@@ -53,7 +54,7 @@ public class AuthService {
         return user;
     }
 
-
+    @Transactional(readOnly = true)
     public LoginResponse login(String username, String password) {
         AppUser user = authenticate(username, password);
 
@@ -63,6 +64,7 @@ public class AuthService {
         return new LoginResponse(jwt, message);
     }
 
+    @Transactional(readOnly = true)
     public String getRefreshToken(String username) {
         AppUser appUser = appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("No user found with username: " + username));
@@ -87,6 +89,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public RefreshResponse refreshJwt(String refreshToken) {
         Long ownerId = refreshTokenStore.findTokenOwner(refreshToken)
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired refresh token"));
