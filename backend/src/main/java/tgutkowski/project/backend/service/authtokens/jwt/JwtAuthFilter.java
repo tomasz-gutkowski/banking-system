@@ -12,11 +12,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tgutkowski.project.backend.exceptions.InvalidTokenException;
 import tgutkowski.project.backend.model.entities.AppUser;
 import tgutkowski.project.backend.repository.AppUserRepository;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -51,11 +51,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String username = claims.getSubject();
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            AppUser user = appUserRepository.findByUsername(username)
-                    .orElseThrow(() -> new InvalidTokenException("Authentication failed"));
+            Optional<AppUser> optUser = appUserRepository.findByUsername(username);
+
+
+            if (optUser.isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            AppUser user = optUser.get();
+
 
             if(!user.isEnabled() || !user.isAccountNonLocked() || !user.isAccountNonExpired()) {
-                throw new InvalidTokenException("Authentication failed");
+                filterChain.doFilter(request, response);
+                return;
             }
 
             if(!jwtUtil.isTokenExpired(claims)){

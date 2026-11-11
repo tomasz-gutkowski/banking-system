@@ -13,7 +13,7 @@ public class RefreshTokenStore {
     private final RefreshTokenUtil refreshTokenUtil;
     private final StringRedisTemplate redis;
 
-    @Value("${refresh.token.expiration}")
+    @Value("${refresh.token.expiration.milliseconds}")
     private Long expiration;
 
     public RefreshTokenStore(RefreshTokenUtil refreshTokenUtil, StringRedisTemplate redis) {
@@ -24,7 +24,7 @@ public class RefreshTokenStore {
     public String issueToken(long userId) {
         String token = refreshTokenUtil.generateRefreshToken();
         String key = refreshTokenUtil.toRedisKey(token);
-        redis.opsForValue().set(key, String.valueOf(userId), Duration.ofSeconds(expiration));
+        redis.opsForValue().set(key, String.valueOf(userId), Duration.ofMillis(expiration));
         return token;
     }
 

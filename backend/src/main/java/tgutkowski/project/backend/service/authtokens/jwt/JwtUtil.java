@@ -21,7 +21,7 @@ public class JwtUtil {
 
     private SecretKey signingKey;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration.milliseconds}")
     private long expiration;
 
     @PostConstruct

@@ -3,7 +3,7 @@ package tgutkowski.project.backend.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +36,7 @@ public class AdminController {
     @GetMapping("/status-change-logs/tickets")
     public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogsTickets(@RequestParam(required = false) StatusChange requestType,
                                                                                                                       @RequestParam(required = false) ResolutionStatus resolutionStatus,
-                                                                                                                      @Size(min = 1)
+                                                                                                                      @Min(1)
                                                                                                                       @RequestParam(defaultValue = "10") int size,
                                                                                                                       @RequestParam(required = false) UUID cursor){
         int sizeCapped = Math.min(size, 10);

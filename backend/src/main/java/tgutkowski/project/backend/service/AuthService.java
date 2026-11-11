@@ -20,6 +20,8 @@ import tgutkowski.project.backend.repository.AppUserRepository;
 import tgutkowski.project.backend.service.authtokens.jwt.JwtUtil;
 import tgutkowski.project.backend.service.authtokens.refresh.RefreshTokenStore;
 
+import java.util.Optional;
+
 @Service
 public class AuthService {
 
@@ -39,8 +41,18 @@ public class AuthService {
     }
 
     private AppUser authenticate(String username, String password){
-        AppUser user = appUserRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
+        boolean userExists = true;
+        Optional<AppUser> optUser = appUserRepository.findByUsername(username);
+
+        AppUser user;
+        if(optUser.isPresent()){
+            user = optUser.get();
+        } else{
+            userExists = false;
+            user = new AppUser();
+            user.setUsername("dummyUsername");
+            user.setPassword("$2a$10$LmVnwADLutehl.3detBZruBbanaSzw96WyP.bohxWSFCT9FrEeS6C");
+        }
 
         String expectedPassword = user.getPassword();
 
@@ -48,6 +60,9 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid credentials");
         }
         if(!user.isEnabled() || !user.isAccountNonLocked() || !user.isAccountNonExpired()) {
+            throw new InvalidCredentialsException("Invalid credentials");
+        }
+        if(!userExists) {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 

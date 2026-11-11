@@ -12,8 +12,8 @@ import java.util.UUID;
 
 @Entity
 @Table(indexes = {
-        @Index(name="idx_account_sender" ,columnList = "sender_id"),
-        @Index(name="idx_account_receiver" ,columnList = "receiver_id")
+        @Index(name="idx_transfer__sender" ,columnList = "sender_id"),
+        @Index(name="idx_transfer_receiver" ,columnList = "receiver_id")
 })
 public class Transfer implements Cursorable<TransferInfoDto>{
     @Id

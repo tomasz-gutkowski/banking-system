@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
@@ -26,7 +25,6 @@ import java.util.UUID;
         description = "Transfers and funds management")
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/transfer")
 public class TransferController {
 
@@ -57,7 +55,7 @@ public class TransferController {
 
     @Operation(summary = "Allows user to create new funds transfer to destined account in a system",
             description = "Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body")
-    @PostMapping("/transfer/{accountId}")
+    @PostMapping("/transfer-funds/{accountId}")
     public ResponseEntity<TransferResponse> postTransfer(@AuthenticationPrincipal AppUser appUser,
                                              @Valid @RequestBody TransferRequest request,
                                              @NotBlank(message = "Sender is required")

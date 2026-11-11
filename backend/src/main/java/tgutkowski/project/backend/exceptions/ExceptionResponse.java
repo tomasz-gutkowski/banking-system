@@ -11,4 +11,8 @@ public record ExceptionResponse(
     public static ExceptionResponse from(int status, String message, String path) {
         return new ExceptionResponse(status, message, path, LocalDateTime.now());
     }
+
+    public String toJsonString() {
+        return "{\"status\":\"" + status + "\",\"message\":\"" + message + "\",\"path\":\"" + path + "\",\"timestamp\":\"" + timestamp.toString() + "\"}";
+    }
 }

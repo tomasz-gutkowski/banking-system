@@ -102,11 +102,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ExceptionResponse> handleInvalidRefreshToken(InvalidTokenException e, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
     }
-//    //unexpected
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ExceptionResponse> handleGeneral(Exception ex, HttpServletRequest request) {
-//        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred", request);
-//    }
 
     private ResponseEntity<ExceptionResponse> build(
             HttpStatus status, String message, HttpServletRequest request) {

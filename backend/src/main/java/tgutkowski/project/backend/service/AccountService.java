@@ -67,9 +67,8 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the ID"));
     }
 
-
     @Transactional
-    public AccountCreateResponse createAccount(AppUser user) throws ConflictException {
+    public AccountCreateResponse createAccount(AppUser user){
         String username = user.getUsername();
 
         AppUser owner = appUserRepository.findByUsernameLocking(username)
@@ -77,26 +76,18 @@ public class AccountService {
 
         List<AccountStatus> accountStatuses = List.of(AccountStatus.ACTIVE, AccountStatus.FROZEN);
         if(accountRepository.existsByOwner(owner, accountStatuses))
-            throw new ConflictException("Account already exists");
+            throw new ConflictException("Active or frozen account already exists for a user");
 
         Account account = buildAccountWithNoId(owner);
 
         String accountId = generateUniqueAccountId();
 
-        int retries = 100;
-
-        while (retries > 0) {
-            try{
-                account.setAccountId(accountId);
-                accountRepository.save(account);
-                break;
-            }catch(DataIntegrityViolationException e){
-                retries--;
-                if(retries == 0) throw new InternalException("Account creation failed");
-                accountId = generateUniqueAccountId();
-            }
+        account.setAccountId(accountId);
+        try {
+            accountRepository.save(account);
+        } catch (DataIntegrityViolationException e) {
+            throw new InternalException("Internal error, please try again later");
         }
-
 
         String message = "Account created successfully";
 
@@ -119,6 +110,9 @@ public class AccountService {
 
             if(userAccount.getAccountStatus().equals(AccountStatus.CLOSED)){
                 throw new ConflictException("Your account is closed");
+            }
+            if(userAccount.getAccountStatus().equals(AccountStatus.FROZEN)){
+                throw new ConflictException("Your account is currently frozen");
             }
 
             transferService.claimBonusTransfer(userAccount, sysAccount);

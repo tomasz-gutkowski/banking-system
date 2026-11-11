@@ -27,7 +27,7 @@ import java.time.Duration;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Value("${refresh.token.expiration}")
+    @Value("${refresh.token.expiration.milliseconds}")
     private Long refreshTokenExpiration;
 
     private final AuthService authService;
