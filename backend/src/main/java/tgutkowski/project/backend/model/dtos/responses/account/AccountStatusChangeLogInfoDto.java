@@ -3,7 +3,6 @@ package tgutkowski.project.backend.model.dtos.responses.account;
 import tgutkowski.project.backend.model.entities.AccountStatusChangeLog;
 import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionType;
-import tgutkowski.project.backend.model.entities.enums.Roles;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
 
 import java.time.LocalDateTime;

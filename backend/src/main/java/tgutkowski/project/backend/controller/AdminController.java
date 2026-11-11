@@ -1,0 +1,57 @@
+package tgutkowski.project.backend.controller;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import tgutkowski.project.backend.model.dtos.requests.admin.AccountStatusChangeResolutionRequest;
+import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
+import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
+import tgutkowski.project.backend.model.entities.AccountStatusChangeLog;
+import tgutkowski.project.backend.model.entities.AppUser;
+import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
+import tgutkowski.project.backend.model.entities.enums.StatusChange;
+import tgutkowski.project.backend.service.AdminService;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/admin")
+public class AdminController {
+
+    private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
+
+    @GetMapping("/status-change-logs/tickets")
+    public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogsTickets(@RequestParam(required = false) StatusChange requestType,
+                                                                                                                      @RequestParam(required = false) ResolutionStatus resolutionStatus,
+                                                                                                                      @Size(min = 1)
+                                                                                                                      @RequestParam(defaultValue = "10") int size,
+                                                                                                                      @RequestParam(required = false) UUID cursor){
+        int sizeCapped = Math.min(size, 10);
+        PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> response = adminService.getChangeTickets(requestType, resolutionStatus, sizeCapped, cursor);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
+
+    @PostMapping("/status-change-logs/ticket/resolve")
+    public ResponseEntity<AccountStatusChangeLogInfoDto> postStatusChangeLogsTicketResolve(@AuthenticationPrincipal AppUser appUser,
+                                                                       @Valid @RequestBody AccountStatusChangeResolutionRequest request){
+        UUID uuid = UUID.fromString(request.uuid());
+        ResolutionStatus resolutionStatus = request.resolutionStatus();
+
+        AccountStatusChangeLogInfoDto response = adminService.resolveTicket(appUser, uuid, resolutionStatus);
+        return ResponseEntity
+                .ok()
+                .header("Content-Type", "application/json")
+                .body(response);
+    }
+
+}

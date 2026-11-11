@@ -1,4 +1,4 @@
-package tgutkowski.project.backend.model.dtos.requests.account;
+package tgutkowski.project.backend.model.dtos.requests.admin;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

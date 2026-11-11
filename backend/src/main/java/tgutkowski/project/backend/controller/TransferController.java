@@ -1,9 +1,9 @@
 package tgutkowski.project.backend.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,7 +48,7 @@ public class TransferController {
     }
 
     @PostMapping("/transfer/{accountId}")
-    public ResponseEntity<TransferResponse> transferTo(@AuthenticationPrincipal AppUser appUser,
+    public ResponseEntity<TransferResponse> postTransfer(@AuthenticationPrincipal AppUser appUser,
                                              @Valid @RequestBody TransferRequest request,
                                              @NotBlank(message = "Sender is required")
                                              @Pattern(regexp = "^ACC-\\d{8}$",
@@ -76,7 +76,7 @@ public class TransferController {
                                                                 @Pattern(regexp = "^ACC-\\d{8}$",
                                                                     message = "Not an eligible account id")
                                                                 @PathVariable String accountId,
-                                                                @Size(min = 1)
+                                                                @Min(1)
                                                                 @RequestParam(defaultValue = "10") int size,
                                                                 @RequestParam(required = false) UUID cursor
     ) {

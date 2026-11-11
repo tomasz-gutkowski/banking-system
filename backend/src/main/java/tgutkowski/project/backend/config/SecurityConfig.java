@@ -44,10 +44,16 @@ public class SecurityConfig {
                         .requestMatchers("/account/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/transfer/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN")
+
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
+
 
         return http.build();
     }

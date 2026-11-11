@@ -32,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> postLogin(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.username();
         String password = loginRequest.password();
 
@@ -40,7 +40,7 @@ public class AuthController {
 
         String refreshToken = authService.getRefreshToken(username);
 
-        ResponseCookie cookie = getRefreshTokenCookie(refreshToken);
+        ResponseCookie cookie = refreshTokenCookie(refreshToken);
 
         return ResponseEntity
                 .ok()
@@ -51,7 +51,7 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> postUserRegistration(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<RegisterResponse> postRegister(@Valid @RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.username();
         String password = registerRequest.password();
 
@@ -68,7 +68,7 @@ public class AuthController {
     }
 
     @GetMapping("/refresh")
-    public ResponseEntity<RefreshResponse> refreshToken(@CookieValue(name = "refresh_token", required = false)
+    public ResponseEntity<RefreshResponse> getRefresh(@CookieValue(name = "refresh_token", required = false)
                                                             String refreshToken) {
         if (refreshToken == null) {
             throw new InvalidTokenException("Invalid or expired token");
@@ -83,12 +83,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<LogoutResponse> logout(@CookieValue(name = "refresh_token", required = false) String refreshToken){
+    public ResponseEntity<LogoutResponse> postLogout(@CookieValue(name = "refresh_token", required = false) String refreshToken){
         if (refreshToken == null) {
             throw new InvalidTokenException("Invalid or expired token");
         }
 
-        ResponseCookie cookie = getLogoutCookie();
+        ResponseCookie cookie = logoutCookie();
 
         LogoutResponse response = authService.logout(refreshToken);
 
@@ -99,7 +99,7 @@ public class AuthController {
                 .body(response);
     }
 
-    private ResponseCookie getRefreshTokenCookie(String refreshToken) {
+    private ResponseCookie refreshTokenCookie(String refreshToken) {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
                 .secure(true)
@@ -109,7 +109,7 @@ public class AuthController {
                 .build();
     }
 
-    private ResponseCookie getLogoutCookie(){
+    private ResponseCookie logoutCookie(){
         return ResponseCookie.from("refresh_token", null)
                 .httpOnly(true)
                 .secure(true)
