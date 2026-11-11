@@ -1,5 +1,7 @@
 package tgutkowski.project.backend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import tgutkowski.project.backend.service.AdminService;
 
 import java.util.UUID;
 
+@Tag(name = "Admin panel",
+        description = "Methods exclusive to admin accounts")
+
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -26,6 +31,8 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    @Operation(summary = "Returns list of all tickets requesting manually resolved status change",
+            description = "Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests, that require manual confirmation. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
     @GetMapping("/status-change-logs/tickets")
     public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogsTickets(@RequestParam(required = false) StatusChange requestType,
                                                                                                                       @RequestParam(required = false) ResolutionStatus resolutionStatus,
@@ -41,6 +48,8 @@ public class AdminController {
                 .body(response);
     }
 
+    @Operation(summary = "Resolves ticket with a valid resolution type",
+            description = "Resolves ticket giving it either ACCEPTED or DECLINED status. If ticket gets accepted, then account requesting change gets it's status changed accordingly")
     @PostMapping("/status-change-logs/ticket/resolve")
     public ResponseEntity<AccountStatusChangeLogInfoDto> postStatusChangeLogsTicketResolve(@AuthenticationPrincipal AppUser appUser,
                                                                        @Valid @RequestBody AccountStatusChangeResolutionRequest request){

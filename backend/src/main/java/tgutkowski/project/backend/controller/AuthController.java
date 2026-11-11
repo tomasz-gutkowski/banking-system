@@ -1,5 +1,8 @@
 package tgutkowski.project.backend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +20,9 @@ import tgutkowski.project.backend.service.AuthService;
 
 import java.time.Duration;
 
+@Tag(name = "Authentication",
+        description = "User registration and authentication management with JWT + Refresh Token based authentication")
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -31,6 +37,8 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Logs in an existing user",
+        description = "Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> postLogin(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.username();
@@ -49,7 +57,8 @@ public class AuthController {
                 .body(response);
     }
 
-
+    @Operation(summary = "Registers new user to the system",
+            description = "Registers new account using credentials present in request body")
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> postRegister(@Valid @RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.username();
@@ -67,6 +76,8 @@ public class AuthController {
                 .body(response);
     }
 
+    @Operation(summary = "Refreshes JWT based on \"refresh_token\" cookie",
+            description = "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid")
     @GetMapping("/refresh")
     public ResponseEntity<RefreshResponse> getRefresh(@CookieValue(name = "refresh_token", required = false)
                                                             String refreshToken) {
@@ -82,8 +93,11 @@ public class AuthController {
                 .body(refreshResponse);
     }
 
+    @Operation(summary = "Logs out the user",
+            description = "Invalidates sent \"refresh_token\" cookie and removes it from browser")
     @PostMapping("/logout")
-    public ResponseEntity<LogoutResponse> postLogout(@CookieValue(name = "refresh_token", required = false) String refreshToken){
+    public ResponseEntity<LogoutResponse> postLogout(@Parameter(hidden = true)
+                                                         @CookieValue(name = "refresh_token", required = false) String refreshToken){
         if (refreshToken == null) {
             throw new InvalidTokenException("Invalid or expired token");
         }
