@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import tgutkowski.project.backend.config.OpenApiConfig;
 import tgutkowski.project.backend.model.dtos.requests.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
@@ -22,8 +23,7 @@ import tgutkowski.project.backend.service.AccountService;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Account management",
-        description = "Account creation and management")
+@Tag(name = OpenApiConfig.TagNames.ACCOUNT)
 
 @RestController
 @RequestMapping("/account")
@@ -36,7 +36,7 @@ public class AccountController {
     }
 
     @Operation(summary = "Creates an account for user",
-            description = "Creates new account for authenticated user, if said user doesn't currently have other non-closed account")
+            description = "REQUIRED ROLE [USER] - Creates new account for authenticated user, if said user doesn't currently have other non-closed account")
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
     public ResponseEntity<AccountCreateResponse> postCreate(@AuthenticationPrincipal AppUser appUser) {
@@ -48,7 +48,7 @@ public class AccountController {
     }
 
     @Operation(summary = "Returns the list of all accounts belonging to user and their statuses",
-            description = "Returns complete list of all accounts assigned to user with their current status")
+            description = "REQUIRED ROLE [USER] - Returns complete list of all accounts assigned to user with their current status")
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/statuses")
     public ResponseEntity<List<AccountStatusResponse>> getStatuses(@AuthenticationPrincipal AppUser appUser) {
@@ -63,7 +63,7 @@ public class AccountController {
             description = "Returns status for requested account, if it belongs to currently authenticated user or request comes from account with an ADMIN role")
     @GetMapping("/status/{accountId}")
     public ResponseEntity<AccountStatusResponse> getStatus(@AuthenticationPrincipal AppUser appUser,
-                                                               @NotBlank(message = "Sender is required")
+                                                               @NotBlank(message = "Account ID is required")
                                                                @Pattern(regexp = "^ACC-\\d{8}$",
                                                                    message = "Not an eligible account id")
                                                                @PathVariable String accountId) {
@@ -78,7 +78,7 @@ public class AccountController {
             description = "Requests given status change for selected account, either done by account owner or account with ADMIN role")
     @PostMapping("/change-status/{accountId}")
     public ResponseEntity<AccountStatusChangeResponse> postChangeStatus(@AuthenticationPrincipal AppUser appUser,
-                                                                           @NotBlank(message = "Sender is required")
+                                                                           @NotBlank(message = "Account ID is required")
                                                                            @Pattern(regexp = "^ACC-\\d{8}$",
                                                                                    message = "Not an eligible account id")
                                                                            @PathVariable String accountId,
@@ -98,7 +98,7 @@ public class AccountController {
             description = "Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests for selected account. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
     @GetMapping("/status-change-logs/{accountId}")
     public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogs(@AuthenticationPrincipal AppUser appUser,
-                                                                                                                  @NotBlank(message = "Sender is required")
+                                                                                                                  @NotBlank(message = "Account ID is required")
                                                                                                                  @Pattern(regexp = "^ACC-\\d{8}$",
                                                                                                                     message = "Not an eligible account id")
                                                                                                                  @PathVariable String accountId,
@@ -114,11 +114,11 @@ public class AccountController {
                 .body(response);
     }
     @Operation(summary = "Allows user to claim signing bonus for selected account",
-            description = "Claims signing bonus on selected account, if it belongs to the user and user haven't already claimed the bonus")
+            description = "REQUIRED ROLE [USER] - Claims signing bonus on selected account, if it belongs to the user and user haven't already claimed the bonus")
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/claim-bonus/{accountId}")
     public ResponseEntity<ClaimBonusResponse> postClaimBonus(@AuthenticationPrincipal AppUser appUser,
-                                                         @NotBlank(message = "Sender is required")
+                                                         @NotBlank(message = "Account ID is required")
                                                          @Pattern(regexp = "^ACC-\\d{8}$",
                                                                  message = "Not an eligible account id")
                                                          @PathVariable String accountId){

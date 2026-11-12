@@ -9,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
+import tgutkowski.project.backend.exceptions.dtos.ValidationExceptionResponse;
 
 import java.util.*;
 
@@ -18,23 +20,23 @@ public class GlobalExceptionHandler {
     private static final HttpStatus VALIDATION_STATUS = HttpStatus.BAD_REQUEST;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ValidationExceptionResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, List<String>> errors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(fe -> addError(errors, fe.getField(), fe.getDefaultMessage()));
-        return buildValidationResponse(errors);
+        return buildValidationResponse(errors, request.getRequestURI());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+    public ResponseEntity<ValidationExceptionResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
         Map<String, List<String>> errors = new LinkedHashMap<>();
         ex.getConstraintViolations()
                 .forEach(v -> addError(errors, v.getPropertyPath().toString(), v.getMessage()));
-        return buildValidationResponse(errors);
+        return buildValidationResponse(errors, request.getRequestURI());
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<Map<String, Object>> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
+    public ResponseEntity<ValidationExceptionResponse> handleHandlerMethodValidation(HandlerMethodValidationException ex, HttpServletRequest request) {
         Map<String, List<String>> errors = new LinkedHashMap<>();
         ex.getParameterValidationResults().forEach(result ->
                 result.getResolvableErrors().forEach(error -> {
@@ -43,19 +45,20 @@ public class GlobalExceptionHandler {
                             : result.getMethodParameter().getParameterName();
                     addError(errors, key, error.getDefaultMessage());
                 }));
-        return buildValidationResponse(errors);
+        return buildValidationResponse(errors, request.getRequestURI());
     }
 
     private static void addError(Map<String, List<String>> errors, String key, String message) {
         errors.computeIfAbsent(key, k -> new ArrayList<>()).add(message);
     }
 
-    private static ResponseEntity<Map<String, Object>> buildValidationResponse(Map<String, List<String>> errors) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", String.valueOf(VALIDATION_STATUS.value()));
-        body.put("message", "Validation failure");
-        body.put("errors", errors);
-        return ResponseEntity.status(VALIDATION_STATUS).body(body);
+    private static ResponseEntity<ValidationExceptionResponse> buildValidationResponse(Map<String, List<String>> errors, String path) {
+        ValidationExceptionResponse exceptionResponse = new ValidationExceptionResponse(
+                VALIDATION_STATUS.value(),
+                "Validation failure",
+                path,
+                errors);
+        return ResponseEntity.status(VALIDATION_STATUS).body(exceptionResponse);
     }
 
     @ExceptionHandler(InvalidArgumentException.class)
@@ -104,9 +107,9 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ExceptionResponse> build(
-            HttpStatus status, String message, HttpServletRequest request) {
+            HttpStatus status, String error, HttpServletRequest request) {
 
-        ExceptionResponse exceptionResponse = ExceptionResponse.from(status.value(), message, request.getRequestURI());
+        ExceptionResponse exceptionResponse = new ExceptionResponse(status.value(), error, request.getRequestURI());
         return ResponseEntity.status(status).body(exceptionResponse);
     }
 

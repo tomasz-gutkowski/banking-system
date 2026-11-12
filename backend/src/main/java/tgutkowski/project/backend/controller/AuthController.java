@@ -2,6 +2,11 @@ package tgutkowski.project.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +14,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tgutkowski.project.backend.config.OpenApiConfig;
+import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.exceptions.InvalidTokenException;
+import tgutkowski.project.backend.exceptions.dtos.ValidationExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.auth.LoginRequest;
 import tgutkowski.project.backend.model.dtos.requests.auth.RegisterRequest;
 import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
@@ -20,10 +28,10 @@ import tgutkowski.project.backend.service.AuthService;
 
 import java.time.Duration;
 
-@Tag(name = "Authentication",
-        description = "User registration and authentication management with JWT + Refresh Token based authentication")
+@Tag(name = OpenApiConfig.TagNames.AUTH)
 
 @RestController
+@SecurityRequirements()
 @RequestMapping("/auth")
 public class AuthController {
 
@@ -39,6 +47,14 @@ public class AuthController {
 
     @Operation(summary = "Logs in an existing user",
         description = "Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ValidationExceptionResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> postLogin(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.username();
@@ -59,6 +75,14 @@ public class AuthController {
 
     @Operation(summary = "Registers new user to the system",
             description = "Registers new account using credentials present in request body")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ValidationExceptionResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Username taken",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+    })
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> postRegister(@Valid @RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.username();
@@ -78,6 +102,12 @@ public class AuthController {
 
     @Operation(summary = "Refreshes JWT based on \"refresh_token\" cookie",
             description = "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired token",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
+    })
     @GetMapping("/refresh")
     public ResponseEntity<RefreshResponse> getRefresh(@CookieValue(name = "refresh_token", required = false)
                                                             String refreshToken) {
@@ -96,6 +126,12 @@ public class AuthController {
     @Operation(summary = "Logs out the user",
             description = "Invalidates sent \"refresh_token\" cookie and removes it from browser")
     @PostMapping("/logout")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired token",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+    })
     public ResponseEntity<LogoutResponse> postLogout(@Parameter(hidden = true)
                                                          @CookieValue(name = "refresh_token", required = false) String refreshToken){
         if (refreshToken == null) {
@@ -119,7 +155,7 @@ public class AuthController {
                 .secure(true)
                 .sameSite("Strict")
                 .path("/auth")
-                .maxAge(Duration.ofSeconds(refreshTokenExpiration))
+                .maxAge(Duration.ofMillis(refreshTokenExpiration))
                 .build();
     }
 

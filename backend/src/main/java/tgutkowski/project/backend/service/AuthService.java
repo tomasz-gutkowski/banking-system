@@ -1,14 +1,11 @@
 package tgutkowski.project.backend.service;
 
-
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.ConflictException;
-import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.InvalidCredentialsException;
 import tgutkowski.project.backend.exceptions.InvalidTokenException;
 import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
@@ -25,6 +22,8 @@ import java.util.Optional;
 @Service
 public class AuthService {
 
+    private final String dummyHash;
+
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -38,6 +37,8 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.refreshTokenStore = refreshTokenStore;
+
+        this.dummyHash = passwordEncoder.encode("dummyPassword");
     }
 
     private AppUser authenticate(String username, String password){
@@ -50,8 +51,7 @@ public class AuthService {
         } else{
             userExists = false;
             user = new AppUser();
-            user.setUsername("dummyUsername");
-            user.setPassword("$2a$10$LmVnwADLutehl.3detBZruBbanaSzw96WyP.bohxWSFCT9FrEeS6C");
+            user.setPassword(dummyHash);
         }
 
         String expectedPassword = user.getPassword();
@@ -89,7 +89,7 @@ public class AuthService {
 
 
     @Transactional
-    public void register(String username, String password) throws InvalidArgumentException {
+    public void register(String username, String password) {
         AppUser appUser = new AppUser();
         if (appUserRepository.findByUsername(username).isPresent()) {
             throw new ConflictException("Username already taken");

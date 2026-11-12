@@ -7,8 +7,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import tgutkowski.project.backend.config.OpenApiConfig;
 import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.BalanceResponse;
@@ -21,8 +23,7 @@ import tgutkowski.project.backend.service.TransferService;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Tag(name = "Transfer management",
-        description = "Transfers and funds management")
+@Tag(name = OpenApiConfig.TagNames.TRANSFER)
 
 @RestController
 @RequestMapping("/transfer")
@@ -36,10 +37,11 @@ public class TransferController {
 
 
     @Operation(summary = "Allows user to check current balance for one of their accounts",
-            description = "Returns balance for an existing account if it belongs to currently authenticated user")
+            description = "REQUIRED ROLE [USER] - Returns balance for an existing account if it belongs to currently authenticated user")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/balance/{accountId}")
     public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal AppUser appUser,
-                                                 @NotBlank(message = "Sender is required")
+                                                 @NotBlank(message = "Account ID is required")
                                                  @Pattern(regexp = "^ACC-\\d{8}$",
                                                          message = "Not an eligible account id")
                                                  @PathVariable String accountId) {
@@ -54,11 +56,12 @@ public class TransferController {
     }
 
     @Operation(summary = "Allows user to create new funds transfer to destined account in a system",
-            description = "Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body")
+            description = "REQUIRED ROLE [USER] - Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body")
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/transfer-funds/{accountId}")
     public ResponseEntity<TransferResponse> postTransfer(@AuthenticationPrincipal AppUser appUser,
                                              @Valid @RequestBody TransferRequest request,
-                                             @NotBlank(message = "Sender is required")
+                                             @NotBlank(message = "Account ID is required for a sender")
                                              @Pattern(regexp = "^ACC-\\d{8}$",
                                                      message = "Not an eligible account id")
                                              @PathVariable String accountId)
@@ -78,10 +81,11 @@ public class TransferController {
     }
 
     @Operation(summary = "Allows user to get list of transfers connected to their account",
-            description = "Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
+            description = "REQUIRED ROLE [USER] - Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/transfers/{accountId}")
     public ResponseEntity<PageResponse<Transfer, TransferInfoDto>> getTransfers(@AuthenticationPrincipal AppUser appUser,
-                                                                @NotBlank(message = "Sender is required")
+                                                                @NotBlank(message = "Account ID is required")
                                                                 @Pattern(regexp = "^ACC-\\d{8}$",
                                                                     message = "Not an eligible account id")
                                                                 @PathVariable String accountId,
