@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InternalException;
-import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
 import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
@@ -256,7 +255,7 @@ public class AccountService {
         Long cursorId = null;
         if(cursor != null){
             cursorId = accountStatusChangeLogRepository.getIdByAccountAndCursor(account, cursor)
-                    .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
+                    .orElseThrow(() -> new ResourceNotFoundException("No record found for given cursor"));
         }
 
         List<AccountStatusChangeLog> accountStatusChangeLogs = accountStatusChangeLogRepository.getLogsPage(account, cursorId, limit);

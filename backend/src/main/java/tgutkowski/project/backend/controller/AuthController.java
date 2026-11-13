@@ -15,9 +15,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.config.OpenApiConfig;
+import tgutkowski.project.backend.config.annotations.ApiValidationErrors;
 import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.exceptions.InvalidTokenException;
-import tgutkowski.project.backend.exceptions.dtos.ValidationExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.auth.LoginRequest;
 import tgutkowski.project.backend.model.dtos.requests.auth.RegisterRequest;
 import tgutkowski.project.backend.model.dtos.responses.auth.LoginResponse;
@@ -45,16 +45,15 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @Operation(summary = "Logs in an existing user",
-        description = "Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Success",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ValidationExceptionResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials",
-                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
-    })
+        @Operation(summary = "Logs in an existing user",
+            description = "Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Sends initial JWT and sets \"refresh_token\" cookie",
+                        content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+                @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+        })
+        @ApiValidationErrors
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> postLogin(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.username();
@@ -73,16 +72,14 @@ public class AuthController {
                 .body(response);
     }
 
-    @Operation(summary = "Registers new user to the system",
-            description = "Registers new account using credentials present in request body")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Success",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ValidationExceptionResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Username taken",
-                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
-    })
+
+        @Operation(summary = "Registers new user to the system",
+                description = "Registers new account using credentials present in request body")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "409", description = "Username taken",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+        })
+        @ApiValidationErrors
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> postRegister(@Valid @RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.username();
@@ -100,16 +97,16 @@ public class AuthController {
                 .body(response);
     }
 
-    @Operation(summary = "Refreshes JWT based on \"refresh_token\" cookie",
-            description = "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Success",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired token",
-                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
-    })
+
+        @Operation(summary = "Refreshes JWT based on \"refresh_token\" cookie",
+                description = "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid. \"refresh_token\" value is read from HTTP Cookies")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "401", description = "Invalid or expired token",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
+        })
     @GetMapping("/refresh")
-    public ResponseEntity<RefreshResponse> getRefresh(@CookieValue(name = "refresh_token", required = false)
+    public ResponseEntity<RefreshResponse> getRefresh(@Parameter(hidden = true)
+                                                          @CookieValue(name = "refresh_token", required = false)
                                                             String refreshToken) {
         if (refreshToken == null) {
             throw new InvalidTokenException("Invalid or expired token");
@@ -123,15 +120,16 @@ public class AuthController {
                 .body(refreshResponse);
     }
 
-    @Operation(summary = "Logs out the user",
-            description = "Invalidates sent \"refresh_token\" cookie and removes it from browser")
+
+        @Operation(summary = "Logs out the user",
+                description = "Invalidates sent \"refresh_token\" cookie and removes it from browser.  \"refresh_token\" value is read from HTTP Cookies")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Previous \"refresh_token\" cookie removed",
+                        content = @Content(schema = @Schema(implementation = LogoutResponse.class))),
+                @ApiResponse(responseCode = "401", description = "Invalid or expired token",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+        })
     @PostMapping("/logout")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Success",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired token",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-    })
     public ResponseEntity<LogoutResponse> postLogout(@Parameter(hidden = true)
                                                          @CookieValue(name = "refresh_token", required = false) String refreshToken){
         if (refreshToken == null) {

@@ -1,5 +1,6 @@
 package tgutkowski.project.backend.model.dtos.requests.admin;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
@@ -13,4 +14,11 @@ public record AccountStatusChangeResolutionRequest(
 
         @NotNull(message = "Resolution cannot be empty")
         ResolutionStatus resolutionStatus
-) {}
+
+
+) {
+        @AssertTrue(message = "Resolution has to be either ACCEPTED or DECLINED")
+        public boolean isResolutionStatusValid(){
+            return resolutionStatus == ResolutionStatus.ACCEPTED || resolutionStatus == ResolutionStatus.DECLINED;
+        }
+}

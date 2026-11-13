@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.ConflictException;
 import tgutkowski.project.backend.exceptions.InternalException;
-import tgutkowski.project.backend.exceptions.InvalidArgumentException;
+import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.entities.Account;
@@ -43,7 +43,7 @@ public class AdminService {
         Long cursorId = null;
         if(cursor != null){
             cursorId = accountStatusChangeLogRepository.getIdByCursor(cursor)
-                    .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
+                    .orElseThrow(() -> new ResourceNotFoundException("No record found for given cursor"));
         }
 
         List<AccountStatusChangeLog> accountStatusChangeLogs = accountStatusChangeLogRepository.getLogsTicketPage(requestType, resolutionStatus, cursorId, limit);
@@ -57,7 +57,7 @@ public class AdminService {
     @Transactional
     public AccountStatusChangeLogInfoDto resolveTicket(AppUser user, UUID uuid, ResolutionStatus resolutionStatus) {
         AccountStatusChangeLog ascl = accountStatusChangeLogRepository.findByUuidLocking(uuid)
-                .orElseThrow(() -> new InvalidArgumentException("No ticket with selected UUID"));
+                .orElseThrow(() -> new ResourceNotFoundException("No ticket with selected UUID"));
 
         String accountId = ascl.getAccount().getAccountId();
 
@@ -66,10 +66,7 @@ public class AdminService {
 
         if(!ascl.getResolutionStatus().equals(ResolutionStatus.PENDING)) throw new ConflictException("Selected ticket already resolved");
 
-        if(!resolutionStatus.equals(ResolutionStatus.ACCEPTED) && !resolutionStatus.equals(ResolutionStatus.DECLINED))
-            throw new InvalidArgumentException("Invalid resolution");
-
-        if(!ascl.getResolutionType().equals(ResolutionType.MANUAL)) throw new InvalidArgumentException("Invalid resolution type");
+        if(!ascl.getResolutionType().equals(ResolutionType.MANUAL)) throw new ConflictException("Selected ticket is not for manual resolution");
 
         switch(ascl.getRequestType()){
             case CLOSE:{

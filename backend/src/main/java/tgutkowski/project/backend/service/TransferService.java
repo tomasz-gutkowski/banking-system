@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tgutkowski.project.backend.exceptions.AccountNotEligibleException;
 import tgutkowski.project.backend.exceptions.InsufficientBalanceException;
-import tgutkowski.project.backend.exceptions.InvalidArgumentException;
 import tgutkowski.project.backend.exceptions.ResourceNotFoundException;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
@@ -109,7 +108,7 @@ public class TransferService {
         Long cursorId = null;
         if (cursor != null) {
             cursorId = transferRepository.getIdByCursor(acc, cursor)
-                    .orElseThrow(() -> new InvalidArgumentException("Invalid cursor"));
+                    .orElseThrow(() -> new ResourceNotFoundException("No record found for given cursor"));
         }
 
         List<Transfer> transfers = transferRepository.getTransfersPage(acc, cursorId, limit);
@@ -122,8 +121,9 @@ public class TransferService {
 
 
     public BigDecimal balanceForAccount(Account acc){
-        List<TransferStatus> acceptedReceiverStatuses = List.of(TransferStatus.COMPLETED, TransferStatus.PENDING);
-        BigDecimal sent = transferRepository.sumSent(acc, acceptedReceiverStatuses);
+        List<TransferStatus> acceptedReceiverStatuses = List.of(TransferStatus.COMPLETED);
+        List<TransferStatus> acceptedSenderStatuses = List.of(TransferStatus.COMPLETED, TransferStatus.PENDING);
+        BigDecimal sent = transferRepository.sumSent(acc, acceptedSenderStatuses);
         BigDecimal received = transferRepository.sumReceived(acc, acceptedReceiverStatuses);
 
         return received.subtract(sent);

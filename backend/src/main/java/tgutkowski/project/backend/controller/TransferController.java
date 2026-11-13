@@ -1,6 +1,10 @@
 package tgutkowski.project.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -11,6 +15,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.config.OpenApiConfig;
+import tgutkowski.project.backend.config.annotations.ApiAuthenticationErrors;
+import tgutkowski.project.backend.config.annotations.ApiForbiddenErrors;
+import tgutkowski.project.backend.config.annotations.ApiValidationErrors;
+import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.BalanceResponse;
@@ -38,6 +46,13 @@ public class TransferController {
 
     @Operation(summary = "Allows user to check current balance for one of their accounts",
             description = "REQUIRED ROLE [USER] - Returns balance for an existing account if it belongs to currently authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "No account with given ID found for the user.",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+    })
+    @ApiAuthenticationErrors
+    @ApiForbiddenErrors
+    @ApiValidationErrors
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/balance/{accountId}")
     public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal AppUser appUser,
@@ -57,6 +72,17 @@ public class TransferController {
 
     @Operation(summary = "Allows user to create new funds transfer to destined account in a system",
             description = "REQUIRED ROLE [USER] - Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "402", description = "Account has no sufficient amount of funds for a transfer",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+            @ApiResponse(responseCode = "404", description = "No account with given sender ID found for the user or no account found for given receiver ID",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Sender or receiver account are not eligible for a transfer",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+    })
+    @ApiAuthenticationErrors
+    @ApiForbiddenErrors
+    @ApiValidationErrors
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/transfer-funds/{accountId}")
     public ResponseEntity<TransferResponse> postTransfer(@AuthenticationPrincipal AppUser appUser,
@@ -82,6 +108,13 @@ public class TransferController {
 
     @Operation(summary = "Allows user to get list of transfers connected to their account",
             description = "REQUIRED ROLE [USER] - Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "No account with given ID found for the user or no record found for given cursor",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+    })
+    @ApiAuthenticationErrors
+    @ApiForbiddenErrors
+    @ApiValidationErrors
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/transfers/{accountId}")
     public ResponseEntity<PageResponse<Transfer, TransferInfoDto>> getTransfers(@AuthenticationPrincipal AppUser appUser,

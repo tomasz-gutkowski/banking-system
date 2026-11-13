@@ -15,15 +15,17 @@ import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
+    private static final String AUTH_KEY = "AuthJWT";
     private static final String AUTHORIZATION_HEADER = "Validate your JWT from /auth/login";
 
     @Bean
     public OpenAPI apiInfo(){
         return new OpenAPI()
-                .addSecurityItem(new SecurityRequirement().addList(AUTHORIZATION_HEADER))
-                .components(new Components().addSecuritySchemes(AUTHORIZATION_HEADER,
+                .addSecurityItem(new SecurityRequirement().addList(AUTH_KEY))
+                .components(new Components().addSecuritySchemes(AUTH_KEY,
                         new SecurityScheme()
-                                .name(AUTHORIZATION_HEADER)
+                                .name(AUTH_KEY)
+                                .description(AUTHORIZATION_HEADER)
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")))
@@ -43,12 +45,12 @@ public class OpenApiConfig {
     }
     public static final class TagNames {
         private TagNames() {}
-        public static final String AUTH = "Authorization";
+        public static final String AUTH = "Authentication";
         public static final String ACCOUNT = "Account";
         public static final String TRANSFER = "Transfer";
         public static final String ADMIN = "Admin";
 
-        public static final String AUTH_DESCRIPTION = "Authorization and registration endpoints";
+        public static final String AUTH_DESCRIPTION = "Authentication and registration endpoints";
         public static final String ACCOUNT_DESCRIPTION = "Bank account creation and management";
         public static final String TRANSFER_DESCRIPTION = "Transfer and funds management";
         public static final String ADMIN_DESCRIPTION = "Admin role exclusive endpoints";

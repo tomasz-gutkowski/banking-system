@@ -20,7 +20,7 @@ public class ExceptionResponse{
     }
 
     public String toJsonString() {
-        return "{\"timestamp\":\"" + timestamp.toString() + "\",\"status\":\"" + status + "\",\"message\":\"" + error + "\",\"path\":\"" + path + "\"}";
+        return "{\"timestamp\":\"" + timestamp.toString() + "\",\"status\":" + status + ",\"error\":\"" + error + "\",\"path\":\"" + path + "\"}";
     }
 
     public String getPath() {

@@ -1,6 +1,10 @@
 package tgutkowski.project.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -8,6 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tgutkowski.project.backend.config.OpenApiConfig;
+import tgutkowski.project.backend.config.annotations.ApiAuthenticationErrors;
+import tgutkowski.project.backend.config.annotations.ApiForbiddenErrors;
+import tgutkowski.project.backend.config.annotations.ApiValidationErrors;
+import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.admin.AccountStatusChangeResolutionRequest;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
@@ -31,8 +39,15 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-    @Operation(summary = "Returns list of all tickets requesting manually resolved status change",
-            description = "REQUIRED ROLE [ADMIN] - Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests, that require manual confirmation. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
+        @Operation(summary = "Returns list of all tickets requesting manually resolved status change",
+                description = "REQUIRED ROLE [ADMIN] - Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests, that require manual confirmation. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "404", description = "No record found for given cursor",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+        })
+        @ApiAuthenticationErrors
+        @ApiForbiddenErrors
+        @ApiValidationErrors
     @GetMapping("/status-change-logs/tickets")
     public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogsTickets(@RequestParam(required = false) StatusChange requestType,
                                                                                                                       @RequestParam(required = false) ResolutionStatus resolutionStatus,
@@ -48,8 +63,17 @@ public class AdminController {
                 .body(response);
     }
 
-    @Operation(summary = "Resolves ticket with a valid resolution type",
-            description = "REQUIRED ROLE [ADMIN] - Resolves ticket giving it either ACCEPTED or DECLINED status. If ticket gets accepted, then account requesting change gets it's status changed accordingly")
+        @Operation(summary = "Resolves ticket with a valid resolution type",
+                description = "REQUIRED ROLE [ADMIN] - Resolves ticket giving it either ACCEPTED or DECLINED status. If ticket gets accepted, then account requesting change gets it's status changed accordingly")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "404", description = "No ticket found for given UUID",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+                @ApiResponse(responseCode = "409", description = "Ticket either not selected for manual resolution, ticket is already resolved or account status doesnt match a requested change",
+                        content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+        })
+        @ApiAuthenticationErrors
+        @ApiForbiddenErrors
+        @ApiValidationErrors
     @PostMapping("/status-change-logs/ticket/resolve")
     public ResponseEntity<AccountStatusChangeLogInfoDto> postStatusChangeLogsTicketResolve(@AuthenticationPrincipal AppUser appUser,
                                                                        @Valid @RequestBody AccountStatusChangeResolutionRequest request){
