@@ -23,7 +23,8 @@ import tgutkowski.project.backend.repository.AppUserRepository;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -119,6 +120,7 @@ public class AccountService {
             owner.setBonusStatus(BonusStatus.CLAIMED);
 
             message = "Bonus claimed successfully";
+
         }
         else if(owner.getBonusStatus().equals(BonusStatus.CLAIMED)){
             message = "Your bonus was already claimed";
@@ -184,7 +186,7 @@ public class AccountService {
 
         AccountStatusChangeLog ascl = new AccountStatusChangeLog();
         String message = "";
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         ascl.setAccount(account);
         ascl.setRequestedBy(user);
         ascl.setRequestDate(now);

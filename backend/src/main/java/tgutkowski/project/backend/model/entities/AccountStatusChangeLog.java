@@ -8,7 +8,7 @@ import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 import tgutkowski.project.backend.model.entities.enums.ResolutionType;
 import tgutkowski.project.backend.model.entities.enums.StatusChange;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -37,7 +37,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
     private String reason;
 
     @Column(nullable = false)
-    private LocalDateTime requestDate;
+    private Instant requestDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -52,7 +52,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
     private ResolutionStatus resolutionStatus;
 
     @Column(nullable = true)
-    private LocalDateTime resolutionDate;
+    private Instant resolutionDate;
 
     public Long getId() {
         return id;
@@ -62,7 +62,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
         return uuid;
     }
 
-    public LocalDateTime getRequestDate() {
+    public Instant getRequestDate() {
         return requestDate;
     }
 
@@ -86,7 +86,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
         return resolvedBy;
     }
 
-    public LocalDateTime getResolutionDate() {
+    public Instant getResolutionDate() {
         return resolutionDate;
     }
 
@@ -98,7 +98,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
         this.id = id;
     }
 
-    public void setRequestDate(LocalDateTime requestDate) {
+    public void setRequestDate(Instant requestDate) {
         this.requestDate = requestDate;
     }
 
@@ -130,7 +130,7 @@ public class AccountStatusChangeLog implements Cursorable<AccountStatusChangeLog
         this.resolvedBy = resolvedBy;
     }
 
-    public void setResolutionDate(LocalDateTime resolutionDate) {
+    public void setResolutionDate(Instant resolutionDate) {
         this.resolutionDate = resolutionDate;
     }
 

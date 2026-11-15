@@ -18,7 +18,8 @@ import tgutkowski.project.backend.model.entities.enums.StatusChange;
 import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.AccountStatusChangeLogRepository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,7 +86,7 @@ public class AdminService {
                 break;
             }
         }
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         ascl.setResolutionDate(now);
         ascl.setResolvedBy(user);
         ascl.setResolutionStatus(resolutionStatus);

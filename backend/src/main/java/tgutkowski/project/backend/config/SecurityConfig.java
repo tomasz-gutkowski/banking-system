@@ -25,6 +25,9 @@ public class SecurityConfig {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Value("${springdoc.api-docs.enabled}")
+    private Boolean enableOpenAPI;
+
     private final JwtAuthFilter jwtAuthFilter;
     private final UserAuthenticationEntryPoint authenticationEntryPoint;
 
@@ -41,21 +44,23 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth ->{ auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/account/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/transfer/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN")
-
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/swagger-ui.html").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/error").permitAll();
+                        if(enableOpenAPI){
+                                auth
+                                        .requestMatchers("/swagger-ui.html").permitAll()
+                                        .requestMatchers("/swagger-ui/**").permitAll()
+                                        .requestMatchers("/v3/api-docs/**").permitAll();
+                        }
+                        auth.anyRequest().authenticated();
+                }
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e.authenticationEntryPoint(authenticationEntryPoint));
-
 
         return http.build();
     }
