@@ -10,7 +10,7 @@ import tgutkowski.project.backend.model.entities.enums.ResolutionStatus;
 public record AccountStatusChangeResolutionRequest(
 
         @Schema(description = "UUIDv4 for pending request that is due for manual resolution. Valid UUID is required and one can be extracted from \"/admin/status-change-logs/tickets\" endpoint response.",
-                example = "12345678-1234-4123-8123-123456789abc"
+                examples = {"12345678-1234-4123-8123-123456789abc"}
         )
         @NotNull(message = "UUID cannot be empty")
         @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
@@ -18,7 +18,7 @@ public record AccountStatusChangeResolutionRequest(
         String uuid,
 
         @Schema(description = "Decision whether ticket is resolved as ACCEPTED or DECLINED. ACCEPTED ticket will automatically assign proper status to requesting account, DECLINED will result in no changes to status",
-        example = "ACCEPTED",
+        examples = {"ACCEPTED"},
         allowableValues = {
                 "ACCEPTED",
                 "DECLINED"

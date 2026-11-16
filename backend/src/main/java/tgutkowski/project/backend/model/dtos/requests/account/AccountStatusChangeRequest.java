@@ -9,13 +9,13 @@ import tgutkowski.project.backend.model.entities.enums.StatusChange;
 @Schema(description = "Request for performing status change on an account")
 public record AccountStatusChangeRequest(
         @Schema(description = "Optional reason for requesting a change",
-                example = "Security concern")
+                examples = {"Security concern"})
         @Nullable
         @Size(max = 200, message = "Reason cannot exceed 200 characters")
         String reason,
 
         @Schema(description = "Status transition desired for an account. FREEZE and CLOSE require ACTIVE account and are executed automatically with CLOSE additionally requiring a balance to be 0, UNFREEZE can be only done on FROZEN account and requires manual admin verification",
-                example="FREEZE")
+                examples = {"FREEZE"})
         @NotNull(message = "Invalid or empty status change")
         StatusChange statusChange
 ) {}

@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "Login form to an existing account. Account can be registered under \"auth/register\" endpoint")
 public record LoginRequest(
-        @Schema(example = "Example_Username123")
+        @Schema(examples = {"Example_Username123"})
         @NotBlank(message = "Username cannot be empty")
         String username,
 
-        @Schema(example = "Example_Password456")
+        @Schema(examples = {"Example_Password456"})
         @NotBlank(message = "Password cannot be empty")
         String password
 ) {

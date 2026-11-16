@@ -12,14 +12,14 @@ import java.nio.charset.StandardCharsets;
 public record RegisterRequest(
 
         @Schema(description = "Unique username consisting only of letters, numbers, dots, underscores and hyphens. Case insensitive.",
-        example = "Example_Username123")
+        examples = {"Example_Username123"})
         @NotBlank(message = "Username cannot be empty")
         @Size(min = 3, max=30, message = "Username must be 3-30 characters")
         @Pattern(regexp = "^[A-Za-z0-9._-]+$", message = "Username can only consist of letters, numbers, dots, underscores and hyphens")
         String username,
 
         @Schema(description = "Password that does not exceed 72 bytes",
-                example = "Example_Password456")
+                examples = {"Example_Password456"})
         @NotBlank(message = "Password cannot be empty")
         @Size(min = 8, max=72, message = "Password must be 8-72 characters")
         String password
