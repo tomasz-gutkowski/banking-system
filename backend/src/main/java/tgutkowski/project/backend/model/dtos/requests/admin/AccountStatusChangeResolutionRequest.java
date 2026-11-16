@@ -31,6 +31,9 @@ public record AccountStatusChangeResolutionRequest(
         @Schema(hidden = true)
         @AssertTrue(message = "Resolution has to be either ACCEPTED or DECLINED")
         public boolean isResolutionStatusValid(){
-            return resolutionStatus == ResolutionStatus.ACCEPTED || resolutionStatus == ResolutionStatus.DECLINED;
+                if(resolutionStatus == null){
+                        return true;
+                }
+                return resolutionStatus == ResolutionStatus.ACCEPTED || resolutionStatus == ResolutionStatus.DECLINED;
         }
 }

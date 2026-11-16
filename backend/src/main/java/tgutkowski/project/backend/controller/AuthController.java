@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,7 @@ import java.time.Duration;
 
 @RestController
 @SecurityRequirements()
-@RequestMapping("/auth")
+@RequestMapping(value = "/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthController {
 
     @Value("${refresh.token.expiration.milliseconds}")
@@ -76,6 +77,8 @@ public class AuthController {
         @Operation(summary = "Registers new user to the system",
                 description = "Registers new account using credentials present in request body")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Successful registration",
+                        content = @Content(schema = @Schema(implementation = RegisterResponse.class))),
                 @ApiResponse(responseCode = "409", description = "Username taken",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
         })
@@ -101,6 +104,8 @@ public class AuthController {
         @Operation(summary = "Refreshes JWT based on \"refresh_token\" cookie",
                 description = "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid. \"refresh_token\" value is read from HTTP Cookies")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Successful JWT refresh",
+                        content = @Content(schema = @Schema(implementation = RefreshResponse.class))),
                 @ApiResponse(responseCode = "401", description = "Invalid or expired token",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
         })

@@ -1,6 +1,7 @@
 package tgutkowski.project.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +23,7 @@ import tgutkowski.project.backend.config.annotations.ApiValidationErrors;
 import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.transfer.TransferRequest;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
+import tgutkowski.project.backend.model.dtos.responses.paging.TransferPageResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.BalanceResponse;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.dtos.responses.transfer.TransferResponse;
@@ -34,7 +37,7 @@ import java.util.UUID;
 @Tag(name = OpenApiConfig.TagNames.TRANSFER)
 
 @RestController
-@RequestMapping("/transfer")
+@RequestMapping(value = "/transfer", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TransferController {
 
     private final TransferService transferService;
@@ -47,6 +50,8 @@ public class TransferController {
     @Operation(summary = "Allows user to check current balance for one of their accounts",
             description = "REQUIRED ROLE [USER] - Returns balance for an existing account if it belongs to currently authenticated user")
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "200" , description = "Information about balance of an account",
+                    content = @Content(schema = @Schema(implementation = BalanceResponse.class))),
             @ApiResponse(responseCode = "404", description = "No account with given ID found for the user.",
                     content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
     })
@@ -56,6 +61,7 @@ public class TransferController {
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/balance/{accountId}")
     public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal AppUser appUser,
+                                                 @Parameter(description = "ID of an account for getting balance. Returned by \"/account/create\" or \"/account/statuses\"")
                                                  @NotBlank(message = "Account ID is required")
                                                  @Pattern(regexp = "^ACC-\\d{8}$",
                                                          message = "Not an eligible account id")
@@ -73,6 +79,8 @@ public class TransferController {
     @Operation(summary = "Allows user to create new funds transfer to destined account in a system",
             description = "REQUIRED ROLE [USER] - Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body")
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "200" , description = "Successful transfer creation information",
+                    content = @Content(schema = @Schema(implementation = TransferResponse.class))),
             @ApiResponse(responseCode = "402", description = "Account has no sufficient amount of funds for a transfer",
                     content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
             @ApiResponse(responseCode = "404", description = "No account with given sender ID found for the user or no account found for given receiver ID",
@@ -87,6 +95,7 @@ public class TransferController {
     @PostMapping("/transfer-funds/{accountId}")
     public ResponseEntity<TransferResponse> postTransfer(@AuthenticationPrincipal AppUser appUser,
                                              @Valid @RequestBody TransferRequest request,
+                                             @Parameter(description = "ID of an account set to be a sender of a transfer. Returned by \"/account/create\" or \"/account/statuses\"")
                                              @NotBlank(message = "Account ID is required for a sender")
                                              @Pattern(regexp = "^ACC-\\d{8}$",
                                                      message = "Not an eligible account id")
@@ -109,6 +118,8 @@ public class TransferController {
     @Operation(summary = "Allows user to get list of transfers connected to their account",
             description = "REQUIRED ROLE [USER] - Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "200" , description = "Page for all transfers that include selected account",
+                    content = @Content(schema = @Schema(implementation = TransferPageResponse.class))),
             @ApiResponse(responseCode = "404", description = "No account with given ID found for the user or no record found for given cursor",
                     content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
     })
@@ -118,12 +129,15 @@ public class TransferController {
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/transfers/{accountId}")
     public ResponseEntity<PageResponse<Transfer, TransferInfoDto>> getTransfers(@AuthenticationPrincipal AppUser appUser,
+                                                                                @Parameter(description = "ID of an account for getting transfers list. Returned by \"/account/create\" or \"/account/statuses\"")
                                                                 @NotBlank(message = "Account ID is required")
                                                                 @Pattern(regexp = "^ACC-\\d{8}$",
                                                                     message = "Not an eligible account id")
                                                                 @PathVariable String accountId,
+                                                                @Parameter(description = "Amount of records in a page (1-20, greater values are reduced to the top of the range)")
                                                                 @Min(1)
                                                                 @RequestParam(defaultValue = "10") int size,
+                                                                @Parameter(description = "Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)")
                                                                 @RequestParam(required = false) UUID cursor
     ) {
         int sizeCapped = Math.min(size, 20);

@@ -21,7 +21,8 @@ import tgutkowski.project.backend.repository.AccountRepository;
 import tgutkowski.project.backend.repository.TransferRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,7 +59,7 @@ public class TransferService {
         transfer.setSender(systemAccount);
         transfer.setReceiver(account);
         transfer.setStatus(TransferStatus.COMPLETED);
-        transfer.setDate(LocalDateTime.now());
+        transfer.setDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
 
         transferRepository.save(transfer);
     }
@@ -92,7 +93,7 @@ public class TransferService {
         transfer.setAmount(amount);
         transfer.setSender(senderAcc);
         transfer.setReceiver(receiverAcc);
-        transfer.setDate(LocalDateTime.now());
+        transfer.setDate(Instant.now().truncatedTo(ChronoUnit.MILLIS));
         transfer.setStatus(TransferStatus.COMPLETED);
         transferRepository.save(transfer);
 

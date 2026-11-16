@@ -1,6 +1,8 @@
 package tgutkowski.project.backend.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +12,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,7 @@ import tgutkowski.project.backend.exceptions.dtos.ExceptionResponse;
 import tgutkowski.project.backend.model.dtos.requests.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.*;
 import tgutkowski.project.backend.model.dtos.responses.account.AccountStatusChangeLogInfoDto;
+import tgutkowski.project.backend.model.dtos.responses.paging.AccountStatusChangePageResponse;
 import tgutkowski.project.backend.model.dtos.responses.paging.PageResponse;
 import tgutkowski.project.backend.model.entities.AccountStatusChangeLog;
 import tgutkowski.project.backend.model.entities.AppUser;
@@ -34,7 +38,7 @@ import java.util.UUID;
 @Tag(name = OpenApiConfig.TagNames.ACCOUNT)
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping(value = "/account", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AccountController {
 
     private final AccountService accountService;
@@ -46,6 +50,8 @@ public class AccountController {
         @Operation(summary = "Creates an account for user",
             description = "REQUIRED ROLE [USER] - Creates new account for authenticated user, if said user doesn't currently have other non-closed account")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Successful account creation",
+                    content = @Content(schema = @Schema(implementation = AccountCreateResponse.class))),
                 @ApiResponse(responseCode = "409", description = "Account couldn't be created, because user already has an active or frozen account",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
         })
@@ -63,6 +69,10 @@ public class AccountController {
 
         @Operation(summary = "Returns the list of all accounts belonging to user and their statuses",
                 description = "REQUIRED ROLE [USER] - Returns complete list of all accounts assigned to user with their current status")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Statuses of all accounts belonging to user",
+                        content = @Content(array = @ArraySchema(schema = @Schema(implementation = AccountStatusResponse.class)))),
+        })
         @ApiAuthenticationErrors
         @ApiForbiddenErrors
     @PreAuthorize("hasRole('USER')")
@@ -78,6 +88,8 @@ public class AccountController {
         @Operation(summary = "Returns status for selected account",
                 description = "Returns status for requested account, if it belongs to currently authenticated user or request comes from account with an ADMIN role")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Status of an account requested by user",
+                        content = @Content(schema = @Schema(implementation = AccountStatusResponse.class))),
                 @ApiResponse(responseCode = "404", description = "ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
         })
@@ -85,6 +97,7 @@ public class AccountController {
         @ApiValidationErrors
     @GetMapping("/status/{accountId}")
     public ResponseEntity<AccountStatusResponse> getStatus(@AuthenticationPrincipal AppUser appUser,
+                                                               @Parameter(description = "ID of an account for status check. Returned by \"/account/create\" or \"/account/statuses\"")
                                                                @NotBlank(message = "Account ID is required")
                                                                @Pattern(regexp = "^ACC-\\d{8}$",
                                                                    message = "Not an eligible account id")
@@ -99,6 +112,8 @@ public class AccountController {
         @Operation(summary = "Requests given status change on selected account",
                 description = "Requests given status change for selected account, either done by account owner or account with ADMIN role")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Successful request for status change",
+                        content = @Content(schema = @Schema(implementation = AccountStatusChangeResponse.class))),
                 @ApiResponse(responseCode = "404", description = "ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
                 @ApiResponse(responseCode = "409", description = "Illegal state shift requested for account (ex. CLOSE -> FROZEN), or attempt at closing account with funds",
@@ -108,6 +123,7 @@ public class AccountController {
         @ApiValidationErrors
     @PostMapping("/change-status/{accountId}")
     public ResponseEntity<AccountStatusChangeResponse> postChangeStatus(@AuthenticationPrincipal AppUser appUser,
+                                                                           @Parameter(description = "ID of an account for status change. Returned by \"/account/create\" or \"/account/statuses\"")
                                                                            @NotBlank(message = "Account ID is required")
                                                                            @Pattern(regexp = "^ACC-\\d{8}$",
                                                                                    message = "Not an eligible account id")
@@ -128,6 +144,8 @@ public class AccountController {
         @Operation(summary = "Returns lists of all status changes requested for selected account",
                 description = "Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests for selected account. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter")
         @ApiResponses(value = {
+                @ApiResponse(responseCode = "200" , description = "Page of status change logs for selected account",
+                        content = @Content(schema = @Schema(implementation = AccountStatusChangePageResponse.class))),
                 @ApiResponse(responseCode = "404", description = "ROLE [USER]: No account with given ID found for the user or no record found for given cursor. ROLE [ADMIN]: No account with given ID found or no record found for given cursor",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
         })
@@ -135,12 +153,15 @@ public class AccountController {
         @ApiValidationErrors
     @GetMapping("/status-change-logs/{accountId}")
     public ResponseEntity<PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto>> getStatusChangeLogs(@AuthenticationPrincipal AppUser appUser,
+                                                                                                                   @Parameter(description = "ID of an account for getting status change logs. Returned by \"/account/create\" or \"/account/statuses\"")
                                                                                                                   @NotBlank(message = "Account ID is required")
                                                                                                                  @Pattern(regexp = "^ACC-\\d{8}$",
                                                                                                                     message = "Not an eligible account id")
                                                                                                                  @PathVariable String accountId,
+                                                                                                                   @Parameter(description = "Amount of records in a page (1-10, greater values are reduced to the top of the range)")
                                                                                                                   @Min(1)
                                                                                                                   @RequestParam(defaultValue = "10") int size,
+                                                                                                                   @Parameter(description = "Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)")
                                                                                                                   @RequestParam(required = false) UUID cursor){
         int sizeCapped = Math.min(size, 10);
         PageResponse<AccountStatusChangeLog, AccountStatusChangeLogInfoDto> response = accountService.getChangeLogs(appUser, accountId, sizeCapped, cursor);
@@ -155,7 +176,8 @@ public class AccountController {
         @Operation(summary = "Allows user to claim signing bonus for selected account",
                 description = "REQUIRED ROLE [USER] - Claims signing bonus on selected account, if it belongs to the user and user haven't already claimed the bonus")
         @ApiResponses(value = {
-
+                @ApiResponse(responseCode = "200" , description = "Information about attempt at claiming bonus",
+                        content = @Content(schema = @Schema(implementation = ClaimBonusResponse.class))),
                 @ApiResponse(responseCode = "404", description = "No account with given ID found for the user.",
                         content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
                 @ApiResponse(responseCode = "409", description = "Cannot claim bonus for frozen or closed accounts",
@@ -167,6 +189,7 @@ public class AccountController {
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/claim-bonus/{accountId}")
     public ResponseEntity<ClaimBonusResponse> postClaimBonus(@AuthenticationPrincipal AppUser appUser,
+                                                             @Parameter(description = "ID of an account selected for bonus claim. Returned by \"/account/create\" or \"/account/statuses\"")
                                                          @NotBlank(message = "Account ID is required")
                                                          @Pattern(regexp = "^ACC-\\d{8}$",
                                                                  message = "Not an eligible account id")

@@ -7,7 +7,7 @@ import tgutkowski.project.backend.model.dtos.responses.transfer.TransferInfoDto;
 import tgutkowski.project.backend.model.entities.enums.TransferStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -55,7 +55,7 @@ public class Transfer implements Cursorable<TransferInfoDto>{
         return amount;
     }
 
-    public LocalDateTime getDate() {
+    public Instant getDate() {
         return date;
     }
 
@@ -64,7 +64,7 @@ public class Transfer implements Cursorable<TransferInfoDto>{
     }
 
     @Column(nullable = false)
-    private LocalDateTime date;
+    private Instant date;
 
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
@@ -82,7 +82,7 @@ public class Transfer implements Cursorable<TransferInfoDto>{
         this.amount = amount;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(Instant date) {
         this.date = date;
     }
 
