@@ -16,6 +16,7 @@ import tgutkowski.project.backend.repository.AppUserRepository;
 
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Optional;
 
 @Configuration
@@ -39,9 +40,10 @@ public class InitConfig {
     }
 
     private void addAdminUser(AppUserRepository repository, PasswordEncoder passwordEncoder) {
-        if(repository.findByUsername(adminUsername).isEmpty()) {
+        String username = adminUsername.toLowerCase(Locale.ROOT);
+        if(repository.findByUsername(username).isEmpty()) {
             AppUser admin = new AppUser();
-            admin.setUsername(adminUsername);
+            admin.setUsername(username);
             admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setRole(Roles.ADMIN);
             admin.setBonusStatus(BonusStatus.UNAVAILABLE);

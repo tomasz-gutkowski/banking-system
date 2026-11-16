@@ -137,15 +137,14 @@ public class TransferService {
         if(receiver.getAccountType() == AccountType.SYSTEM)
             throw new AccountNotEligibleException("Receiver account is not eligible");
 
-        if(sender.getAccountType() !=  AccountType.SYSTEM) {
-            if (balance.compareTo(amount) < 0)
-                throw new InsufficientBalanceException("Insufficient funds for a transfer");
-            if (!sender.getAccountStatus().equals(AccountStatus.ACTIVE))
-                throw new AccountNotEligibleException("Sender account is not active");
-        }
-
         if(!receiver.getAccountStatus().equals(AccountStatus.ACTIVE))
             throw new AccountNotEligibleException("Receiver account is not active");
 
+        if(sender.getAccountType() !=  AccountType.SYSTEM) {
+            if (!sender.getAccountStatus().equals(AccountStatus.ACTIVE))
+                throw new AccountNotEligibleException("Sender account is not active");
+            if (balance.compareTo(amount) < 0)
+                throw new InsufficientBalanceException("Insufficient funds for a transfer");
+        }
     }
 }

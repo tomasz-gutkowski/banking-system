@@ -28,6 +28,7 @@ import tgutkowski.project.backend.model.dtos.responses.auth.RegisterResponse;
 import tgutkowski.project.backend.service.AuthService;
 
 import java.time.Duration;
+import java.util.Locale;
 
 @Tag(name = OpenApiConfig.TagNames.AUTH)
 
@@ -57,7 +58,7 @@ public class AuthController {
         @ApiValidationErrors
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> postLogin(@Valid @RequestBody LoginRequest loginRequest) {
-        String username = loginRequest.username();
+        String username = loginRequest.username().toLowerCase(Locale.ROOT);
         String password = loginRequest.password();
 
         LoginResponse response = authService.login(username, password);
@@ -85,7 +86,7 @@ public class AuthController {
         @ApiValidationErrors
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> postRegister(@Valid @RequestBody RegisterRequest registerRequest) {
-        String username = registerRequest.username();
+        String username = registerRequest.username().toLowerCase(Locale.ROOT);
         String password = registerRequest.password();
 
         authService.register(username, password);

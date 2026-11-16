@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 @Schema(description = "Registration form. After success you can authenticate with your credentials under \"auth/login\" endpoint")
 public record RegisterRequest(
 
-        @Schema(description = "Unique username consisting only of letters, numbers, dots, underscores and hyphens",
+        @Schema(description = "Unique username consisting only of letters, numbers, dots, underscores and hyphens. Case insensitive.",
         example = "Example_Username123")
         @NotBlank(message = "Username cannot be empty")
         @Size(min = 3, max=30, message = "Username must be 3-30 characters")

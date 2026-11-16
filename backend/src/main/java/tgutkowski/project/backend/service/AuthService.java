@@ -90,6 +90,7 @@ public class AuthService {
 
     @Transactional
     public void register(String username, String password) {
+
         AppUser appUser = new AppUser();
         if (appUserRepository.findByUsername(username).isPresent()) {
             throw new ConflictException("Username already taken");
