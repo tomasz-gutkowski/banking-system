@@ -56,7 +56,7 @@ git clone https://github.com/tomasz-gutkowski/banking-system.git
 cd banking-system
 cp backend/.env.example backend/.env
 ```
-Open backend/.env file and set `JWT_SECRET` to a value of at least 32 characters. It is required for application to start.
+Open `backend/.env` file and set `JWT_SECRET` to a value of at least 32 characters. It is required for application to start.
 Suggested way of getting compatible value:
 ```bash
 openssl rand -hex 32
@@ -122,13 +122,13 @@ Transfers use pessimistic locking, and the accounts involved are always locked i
 - The JWT secret is validated on startup.
 
 ### Account status changes and audit log
-Every status change is written to an audit log. User-initiated FREEZE and CLOSE are resolved automatically (closing requires a zero balance). UNFREEZE is the only request that creates a `PENDING` ticket, because a user must not be able to lift a freeze on their own. Admin actions are applied immediately.
+Every status change is written to an audit log. User-initiated `FREEZE` and `CLOSE` are resolved automatically (closing requires a zero balance). `UNFREEZE` is the only request that creates a `PENDING` ticket, because a user must not be able to lift a freeze on their own. Admin actions are applied immediately.
 
 ### Keyset pagination
 Lists are paginated with UUID cursors instead of offsets. Results stay stable while new rows are inserted and the cost does not grow with the page number. An unknown cursor returns `404`.
 
 ### Error handling
-`GlobalExceptionHandler` maps the application's exceptions to a consistent JSON body (`ExceptionResponse`, or `ValidationExceptionResponse` with per-field messages for validation failures). `401` and `403` responses use the same fields. Malformed request that fail before validation receive Spring Boot's standard `400` body, but this body is identical to `ExceptionResponse`.
+`GlobalExceptionHandler` maps the application's exceptions to a consistent JSON body (`ExceptionResponse`, or `ValidationExceptionResponse` with per-field messages for validation failures). `401` and `403` responses use the same fields. Malformed requests that fail before validation receive Spring Boot's standard `400` body, which has generic content but same fields as `ExceptionResponse`.
 
 ### OpenAPI
 Documentation is written with annotations, using composed annotations (`@ApiValidationErrors`, `@ApiAuthenticationErrors`, `@ApiForbiddenErrors`) to avoid repeating error responses on every endpoint. A single variable (`ENABLE_OPENAPI`) turns off both Swagger UI and the spec endpoint, and `SecurityConfig` only permits the Swagger paths when it is enabled.

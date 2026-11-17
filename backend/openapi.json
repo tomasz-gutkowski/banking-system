@@ -1,1 +1,1632 @@
-{"openapi":"3.1.0","info":{"title":"Banking System API Documentation","description":"OpenAPI Documentation for a Banking System project","version":"1.0"},"servers":[{"url":"http://localhost:8080","description":"Generated server url"}],"security":[{"AuthJWT":[]}],"tags":[{"name":"Authentication","description":"Authentication and registration endpoints"},{"name":"Account","description":"Bank account creation and management"},{"name":"Transfer","description":"Transfer and funds management"},{"name":"Admin","description":"Admin role exclusive endpoints"}],"paths":{"/transfer/transfer-funds/{accountId}":{"post":{"tags":["Transfer"],"summary":"Allows user to create new funds transfer to destined account in a system","description":"REQUIRED ROLE [USER] - Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body","operationId":"postTransfer","parameters":[{"name":"accountId","in":"path","description":"ID of an account set to be a sender of a transfer. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}}],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TransferRequest"}}},"required":true},"responses":{"200":{"description":"Successful transfer creation information","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TransferResponse"}}}},"402":{"description":"Account has no sufficient amount of funds for a transfer","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"404":{"description":"No account with given sender ID found for the user or no account found for given receiver ID","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"409":{"description":"Sender or receiver account are not eligible for a transfer","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/auth/register":{"post":{"tags":["Authentication"],"summary":"Registers new user to the system","description":"Registers new account using credentials present in request body","operationId":"postRegister","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegisterRequest"}}},"required":true},"responses":{"200":{"description":"Successful registration","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegisterResponse"}}}},"409":{"description":"Username taken","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}},"security":[]}},"/auth/logout":{"post":{"tags":["Authentication"],"summary":"Logs out the user","description":"Invalidates sent \"refresh_token\" cookie and removes it from browser.  \"refresh_token\" value is read from HTTP Cookies","operationId":"postLogout","responses":{"200":{"description":"Previous \"refresh_token\" cookie removed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LogoutResponse"}}}},"401":{"description":"Invalid or expired token","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}}},"security":[]}},"/auth/login":{"post":{"tags":["Authentication"],"summary":"Logs in an existing user","description":"Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication","operationId":"postLogin","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"Sends initial JWT and sets \"refresh_token\" cookie","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginResponse"}}}},"401":{"description":"Invalid credentials","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}},"security":[]}},"/admin/status-change-logs/ticket/resolve":{"post":{"tags":["Admin"],"summary":"Resolves ticket with a valid resolution type","description":"REQUIRED ROLE [ADMIN] - Resolves ticket giving it either ACCEPTED or DECLINED status. If ticket gets accepted, then account requesting change gets it's status changed accordingly","operationId":"postStatusChangeLogsTicketResolve","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangeResolutionRequest"}}},"required":true},"responses":{"200":{"description":"Information of ticket resolution","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangeLogInfoDto"}}}},"404":{"description":"No ticket found for given UUID","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"409":{"description":"Ticket either not selected for manual resolution, ticket is already resolved or account status doesnt match a requested change","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/account/create":{"post":{"tags":["Account"],"summary":"Creates an account for user","description":"REQUIRED ROLE [USER] - Creates new account for authenticated user, if said user doesn't currently have other non-closed account","operationId":"postCreate","responses":{"200":{"description":"Successful account creation","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountCreateResponse"}}}},"409":{"description":"Account couldn't be created, because user already has an active or frozen account","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}}}}},"/account/claim-bonus/{accountId}":{"post":{"tags":["Account"],"summary":"Allows user to claim signing bonus for selected account","description":"REQUIRED ROLE [USER] - Claims signing bonus on selected account, if it belongs to the user and user haven't already claimed the bonus","operationId":"postClaimBonus","parameters":[{"name":"accountId","in":"path","description":"ID of an account selected for bonus claim. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}}],"responses":{"200":{"description":"Information about attempt at claiming bonus","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ClaimBonusResponse"}}}},"404":{"description":"No account with given ID found for the user.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"409":{"description":"Cannot claim bonus for frozen or closed accounts","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/account/change-status/{accountId}":{"post":{"tags":["Account"],"summary":"Requests given status change on selected account","description":"Requests given status change for selected account, either done by account owner or account with ADMIN role","operationId":"postChangeStatus","parameters":[{"name":"accountId","in":"path","description":"ID of an account for status change. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}}],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangeRequest"}}},"required":true},"responses":{"200":{"description":"Successful request for status change","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangeResponse"}}}},"404":{"description":"ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"409":{"description":"Illegal state shift requested for account (ex. CLOSE -> FROZEN), or attempt at closing account with funds","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/transfer/transfers/{accountId}":{"get":{"tags":["Transfer"],"summary":"Allows user to get list of transfers connected to their account","description":"REQUIRED ROLE [USER] - Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter","operationId":"getTransfers","parameters":[{"name":"accountId","in":"path","description":"ID of an account for getting transfers list. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}},{"name":"size","in":"query","description":"Amount of records in a page (1-20, greater values are reduced to the top of the range)","required":false,"schema":{"type":"integer","format":"int32","default":10,"minimum":1}},{"name":"cursor","in":"query","description":"Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)","required":false,"schema":{"type":"string","format":"uuid"}}],"responses":{"200":{"description":"Page for all transfers that include selected account","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TransferPageResponse"}}}},"404":{"description":"No account with given ID found for the user or no record found for given cursor","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/transfer/balance/{accountId}":{"get":{"tags":["Transfer"],"summary":"Allows user to check current balance for one of their accounts","description":"REQUIRED ROLE [USER] - Returns balance for an existing account if it belongs to currently authenticated user","operationId":"getBalance","parameters":[{"name":"accountId","in":"path","description":"ID of an account for getting balance. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}}],"responses":{"200":{"description":"Information about balance of an account","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BalanceResponse"}}}},"404":{"description":"No account with given ID found for the user.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/auth/refresh":{"get":{"tags":["Authentication"],"summary":"Refreshes JWT based on \"refresh_token\" cookie","description":"Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid. \"refresh_token\" value is read from HTTP Cookies","operationId":"getRefresh","responses":{"200":{"description":"Successful JWT refresh","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RefreshResponse"}}}},"401":{"description":"Invalid or expired token","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}}},"security":[]}},"/admin/status-change-logs/tickets":{"get":{"tags":["Admin"],"summary":"Returns list of all tickets requesting manually resolved status change","description":"REQUIRED ROLE [ADMIN] - Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests, that require manual confirmation. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter","operationId":"getStatusChangeLogsTickets","parameters":[{"name":"requestType","in":"query","description":"Request type to filter for. If not specified, response will include all possible options","required":false,"schema":{"type":"string","enum":["FREEZE","UNFREEZE","CLOSE"]}},{"name":"resolutionStatus","in":"query","description":"Resolution status to filter for. If not specified, response will include all possible options","required":false,"schema":{"type":"string","enum":["PENDING","ACCEPTED","DECLINED"]}},{"name":"size","in":"query","description":"Amount of records in a page (1-10, greater values are reduced to the top of the range)","required":false,"schema":{"type":"integer","format":"int32","default":10,"minimum":1}},{"name":"cursor","in":"query","description":"Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)","required":false,"schema":{"type":"string","format":"uuid"}}],"responses":{"200":{"description":"Page for all status change logs with MANUAL resolution","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangePageResponse"}}}},"404":{"description":"No record found for given cursor","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/account/statuses":{"get":{"tags":["Account"],"summary":"Returns the list of all accounts belonging to user and their statuses","description":"REQUIRED ROLE [USER] - Returns complete list of all accounts assigned to user with their current status","operationId":"getStatuses","responses":{"200":{"description":"Statuses of all accounts belonging to user","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/AccountStatusResponse"}}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"403":{"description":"Currently authenticated user is not authorized","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}}}}},"/account/status/{accountId}":{"get":{"tags":["Account"],"summary":"Returns status for selected account","description":"Returns status for requested account, if it belongs to currently authenticated user or request comes from account with an ADMIN role","operationId":"getStatus","parameters":[{"name":"accountId","in":"path","description":"ID of an account for status check. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}}],"responses":{"200":{"description":"Status of an account requested by user","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusResponse"}}}},"404":{"description":"ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}},"/account/status-change-logs/{accountId}":{"get":{"tags":["Account"],"summary":"Returns lists of all status changes requested for selected account","description":"Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests for selected account. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter","operationId":"getStatusChangeLogs","parameters":[{"name":"accountId","in":"path","description":"ID of an account for getting status change logs. Returned by \"/account/create\" or \"/account/statuses\"","required":true,"schema":{"type":"string","minLength":1,"pattern":"^ACC-\\d{8}$"}},{"name":"size","in":"query","description":"Amount of records in a page (1-10, greater values are reduced to the top of the range)","required":false,"schema":{"type":"integer","format":"int32","default":10,"minimum":1}},{"name":"cursor","in":"query","description":"Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)","required":false,"schema":{"type":"string","format":"uuid"}}],"responses":{"200":{"description":"Page of status change logs for selected account","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AccountStatusChangePageResponse"}}}},"404":{"description":"ROLE [USER]: No account with given ID found for the user or no record found for given cursor. ROLE [ADMIN]: No account with given ID found or no record found for given cursor","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"401":{"description":"Failed authentication","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExceptionResponse"}}}},"400":{"description":"Validation error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ValidationExceptionResponse"}}}}}}}},"components":{"schemas":{"TransferRequest":{"type":"object","description":"Creates new outgoing transfer in a system from an ACTIVE account","properties":{"amount":{"type":"number","description":"Amount of funds to be transferred. Requires sender to have balance greater or equal than given amount, for initial balance use \"/account/claim-bonus\". Max 12 integer digits and 2 fraction digits","examples":[100.5],"exclusiveMinimum":0},"receiver":{"type":"string","description":"Account ID of receiver. Account has to exist in a system, have an ACTIVE status and be different then sender","examples":["ACC-12345678"],"minLength":1,"pattern":"^ACC-\\d{8}$"}},"required":["amount","receiver"]},"TransferResponse":{"type":"object","description":"Description of successfully created transfer","properties":{"uuid":{"type":"string","format":"uuid","description":"UUIDv4 identifying transfer"},"senderAccountId":{"type":"string","description":"ID of an account sending funds"},"receiverAccountId":{"type":"string","description":"ID of an account receiving funds"},"amount":{"type":"number","description":"Amount of funds sent in a transfer"},"message":{"type":"string","enum":["Transfer completed successfully"]}}},"ExceptionResponse":{"type":"object","description":"Information about any non-validation error","properties":{"timestamp":{"type":"string","format":"date-time","description":"Date of when exception happened (UTC time)"},"status":{"type":"integer","format":"int32","description":"HTTP error code of an exception (4xx/5xx)"},"error":{"type":"string","description":"Error message"},"path":{"type":"string","description":"URI path of a request that triggered exception"}}},"ValidationExceptionResponse":{"type":"object","description":"Information about a validation error","properties":{"timestamp":{"type":"string","format":"date-time","description":"Date of when exception happened (UTC time)"},"status":{"type":"integer","format":"int32","description":"HTTP error code of an exception (4xx/5xx)"},"error":{"type":"string","description":"Error message"},"path":{"type":"string","description":"URI path of a request that triggered exception"},"errors":{"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}},"description":"List of fields that validation did not pass on together with list of descriptions for not fulfilled requirements","examples":[{"username":["Username can only consist of letters, numbers, dots, underscores and hyphens","Username must be 3-30 characters"],"password":["Password must be 8-72 characters"]}]}}},"RegisterRequest":{"type":"object","description":"Registration form. After success you can authenticate with your credentials under \"auth/login\" endpoint","properties":{"username":{"type":"string","description":"Unique username consisting only of letters, numbers, dots, underscores and hyphens. Case insensitive.","examples":["Example_Username123"],"maxLength":30,"minLength":3,"pattern":"^[A-Za-z0-9._-]+$"},"password":{"type":"string","description":"Password that does not exceed 72 bytes","examples":["Example_Password456"],"maxLength":72,"minLength":8}},"required":["password","username"]},"RegisterResponse":{"type":"object","description":"Informs of a successful registration","properties":{"message":{"type":"string","enum":["Account created successfully"]}}},"LogoutResponse":{"type":"object","description":"Informs of a successful logout","properties":{"message":{"type":"string","enum":["Logout successful"]}}},"LoginRequest":{"type":"object","description":"Login form to an existing account. Account can be registered under \"auth/register\" endpoint","properties":{"username":{"type":"string","examples":["Example_Username123"],"minLength":1},"password":{"type":"string","examples":["Example_Password456"],"minLength":1}},"required":["password","username"]},"LoginResponse":{"type":"object","description":"Informs of a successful login","properties":{"jwt":{"type":"string","description":"JWT allowing for authentication using \"Authorization\" : \"bearer {token}\" header"},"message":{"type":"string","enum":["Login successful"]}}},"AccountStatusChangeResolutionRequest":{"type":"object","description":"Resolution to a PENDING ticket requesting a status change on an account with MANUAL type resolution","properties":{"uuid":{"type":"string","description":"UUIDv4 for pending request that is due for manual resolution. Valid UUID is required and one can be extracted from \"/admin/status-change-logs/tickets\" endpoint response.","examples":["12345678-1234-4123-8123-123456789abc"],"pattern":"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"},"resolutionStatus":{"type":"string","description":"Decision whether ticket is resolved as ACCEPTED or DECLINED. ACCEPTED ticket will automatically assign proper status to requesting account, DECLINED will result in no changes to status","enum":["ACCEPTED","DECLINED"],"examples":["ACCEPTED"]}},"required":["resolutionStatus","uuid"]},"AccountStatusChangeLogInfoDto":{"type":"object","description":"Single log of account status change","properties":{"uuid":{"type":"string","format":"uuid","description":"UUIDv4 identifying log. Best way to extract valid UUID for \"/admin/status-change-logs/ticket/resolve\" endpoint"},"accountId":{"type":"string","description":"ID of an account that status change was requested on"},"requestType":{"type":"string","description":"Status change requested on an account","enum":["FREEZE","UNFREEZE","CLOSE"]},"requestedBy":{"type":"string","description":"Tells whether request was done by account owner (USER) or an admin (ADMIN)","enum":["USER","ADMIN"]},"reason":{"type":"string","description":"Reason given for status change by requester. Can be null if none was given"},"requestDate":{"type":"string","format":"date-time","description":"Date when change was requested (UTC time)"},"resolutionType":{"type":"string","description":"Tells whether request was made for automatic (AUTO) resolution or manual (MANUAL)","enum":["AUTO","MANUAL"]},"resolutionStatus":{"type":"string","description":"Tells whether request was accepted, declined or is still pending resolution","enum":["PENDING","ACCEPTED","DECLINED"]},"resolutionDate":{"type":"string","format":"date-time","description":"Date when request was resolved (UTC time). Null while pending"}}},"AccountCreateResponse":{"type":"object","description":"Response informing of successful account creation","properties":{"accountId":{"type":"string","description":"Account ID assigned to created account"},"message":{"type":"string","enum":["Account created successfully"]}}},"ClaimBonusResponse":{"type":"object","description":"Informs if sign-in bonus was claimed just now, was claimed before or unavailable for user","properties":{"accountId":{"type":"string","description":"ID of an account that bonus claim was attempted for"},"message":{"type":"string","enum":["Bonus claimed successfully","Your bonus was already claimed","Bonus is unavailable for this user"]}}},"AccountStatusChangeRequest":{"type":"object","description":"Request for performing status change on an account","properties":{"reason":{"type":["string","null"],"description":"Optional reason for requesting a change","examples":["Security concern"],"maxLength":200,"minLength":0},"statusChange":{"type":"string","description":"Status transition desired for an account. FREEZE and CLOSE require ACTIVE account and are executed automatically with CLOSE additionally requiring a balance to be 0, UNFREEZE can be only done on FROZEN account and requires manual admin verification","enum":["FREEZE","UNFREEZE","CLOSE"],"examples":["FREEZE"]}},"required":["statusChange"]},"AccountStatusChangeResponse":{"type":"object","description":"Confirms successful request of account status change. Does not mean that account change was necessarily done","properties":{"accountId":{"type":"string","description":"ID of an account that change was requested on"},"message":{"type":"string","enum":["Account closed successfully","Account frozen successfully","Account unfrozen successfully","Account unfreeze request created"]}}},"TransferInfoDto":{"type":"object","description":"Information about a single transaction","properties":{"uuid":{"type":"string","format":"uuid","description":"UUIDv4 identifying transfer"},"senderAccountId":{"type":"string","description":"ID of an account sending funds"},"receiverAccountId":{"type":"string","description":"ID of an account receiving funds"},"amount":{"type":"number","description":"Amount of funds sent in a transfer"},"date":{"type":"string","format":"date-time","description":"Date when transfer was created (UTC time)"},"status":{"type":"string","description":"Current status of a transfer","enum":["PENDING","COMPLETED","CANCELLED"]}}},"TransferPageResponse":{"type":"object","description":"Page response of transfers","properties":{"data":{"type":"array","description":"Ordered list of data","items":{"$ref":"#/components/schemas/TransferInfoDto"}},"cursor":{"type":"string","description":"UUIDv4 pointer at the start of next page, used as cursor query parameter in next request. Cursor equal to null signifies this being a last available page"}}},"BalanceResponse":{"type":"object","description":"Informs about current balance of selected account","properties":{"accountId":{"type":"string","description":"ID of an account that this balance belongs to"},"balance":{"type":"number","description":"Current account balance with 2 fraction digits"}}},"RefreshResponse":{"type":"object","description":"Informs of a successful JWT refresh","properties":{"jwt":{"type":"string","description":"New JWT allowing for authentication using \"Authorization\" : \"bearer {token}\" header"},"message":{"type":"string","enum":["Refresh successful"]}}},"AccountStatusChangePageResponse":{"type":"object","description":"Page response of account status change logs","properties":{"data":{"type":"array","description":"Ordered list of data","items":{"$ref":"#/components/schemas/AccountStatusChangeLogInfoDto"}},"cursor":{"type":"string","description":"UUIDv4 pointer at the start of next page, used as cursor query parameter in next request. Cursor equal to null signifies this being a last available page"}}},"AccountStatusResponse":{"type":"object","description":"Informs about current status of an account","properties":{"accountId":{"type":"string","description":"ID of an account"},"accountStatus":{"type":"string","description":"Current status of an account","enum":["ACTIVE","FROZEN","CLOSED"]}}}},"securitySchemes":{"AuthJWT":{"type":"http","description":"Validate your JWT from /auth/login","name":"AuthJWT","scheme":"bearer","bearerFormat":"JWT"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Banking System API Documentation",
+    "description": "OpenAPI Documentation for a Banking System project",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "AuthJWT": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication and registration endpoints"
+    },
+    {
+      "name": "Account",
+      "description": "Bank account creation and management"
+    },
+    {
+      "name": "Transfer",
+      "description": "Transfer and funds management"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin role exclusive endpoints"
+    }
+  ],
+  "paths": {
+    "/transfer/transfer-funds/{accountId}": {
+      "post": {
+        "tags": [
+          "Transfer"
+        ],
+        "summary": "Allows user to create new funds transfer to destined account in a system",
+        "description": "REQUIRED ROLE [USER] - Attempts to create new transfer from an account belonging to authenticated user, with destination and amount of funds specified in the body",
+        "operationId": "postTransfer",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account set to be a sender of a transfer. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful transfer creation information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Account has no sufficient amount of funds for a transfer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account with given sender ID found for the user or no account found for given receiver ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sender or receiver account are not eligible for a transfer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Registers new user to the system",
+        "description": "Registers new account using credentials present in request body",
+        "operationId": "postRegister",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful registration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Username taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logs out the user",
+        "description": "Invalidates sent \"refresh_token\" cookie and removes it from browser.  \"refresh_token\" value is read from HTTP Cookies",
+        "operationId": "postLogout",
+        "responses": {
+          "200": {
+            "description": "Previous \"refresh_token\" cookie removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logs in an existing user",
+        "description": "Attempts to log in user with credentials provided in request body, on success returns JWT and attaches \"refresh_token\" for further session authentication",
+        "operationId": "postLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sends initial JWT and sets \"refresh_token\" cookie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/status-change-logs/ticket/resolve": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Resolves ticket with a valid resolution type",
+        "description": "REQUIRED ROLE [ADMIN] - Resolves ticket giving it either ACCEPTED or DECLINED status. If ticket gets accepted, then account requesting change gets it's status changed accordingly",
+        "operationId": "postStatusChangeLogsTicketResolve",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountStatusChangeResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Information of ticket resolution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusChangeLogInfoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No ticket found for given UUID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ticket either not selected for manual resolution, ticket is already resolved or account status doesnt match a requested change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/create": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Creates an account for user",
+        "description": "REQUIRED ROLE [USER] - Creates new account for authenticated user, if said user doesn't currently have other non-closed account",
+        "operationId": "postCreate",
+        "responses": {
+          "200": {
+            "description": "Successful account creation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountCreateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account couldn't be created, because user already has an active or frozen account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/claim-bonus/{accountId}": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Allows user to claim signing bonus for selected account",
+        "description": "REQUIRED ROLE [USER] - Claims signing bonus on selected account, if it belongs to the user and user haven't already claimed the bonus",
+        "operationId": "postClaimBonus",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account selected for bonus claim. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Information about attempt at claiming bonus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimBonusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account with given ID found for the user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cannot claim bonus for frozen or closed accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/change-status/{accountId}": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Requests given status change on selected account",
+        "description": "Requests given status change for selected account, either done by account owner or account with ADMIN role",
+        "operationId": "postChangeStatus",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account for status change. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountStatusChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful request for status change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusChangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Illegal state shift requested for account (ex. CLOSE -> FROZEN), or attempt at closing account with funds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/transfers/{accountId}": {
+      "get": {
+        "tags": [
+          "Transfer"
+        ],
+        "summary": "Allows user to get list of transfers connected to their account",
+        "description": "REQUIRED ROLE [USER] - Returns a part of paginated response with given size (1-20, higher values will be reduced to the max of a range) consisting of transfers information for account belonging to authenticated user. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter",
+        "operationId": "getTransfers",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account for getting transfers list. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Amount of records in a page (1-20, greater values are reduced to the top of the range)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page for all transfers that include selected account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account with given ID found for the user or no record found for given cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/balance/{accountId}": {
+      "get": {
+        "tags": [
+          "Transfer"
+        ],
+        "summary": "Allows user to check current balance for one of their accounts",
+        "description": "REQUIRED ROLE [USER] - Returns balance for an existing account if it belongs to currently authenticated user",
+        "operationId": "getBalance",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account for getting balance. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Information about balance of an account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account with given ID found for the user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refreshes JWT based on \"refresh_token\" cookie",
+        "description": "Sends new JWT in response if \"refresh_token\" cookie is present in request and is currently valid. \"refresh_token\" value is read from HTTP Cookies",
+        "operationId": "getRefresh",
+        "responses": {
+          "200": {
+            "description": "Successful JWT refresh",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/status-change-logs/tickets": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Returns list of all tickets requesting manually resolved status change",
+        "description": "REQUIRED ROLE [ADMIN] - Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests, that require manual confirmation. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter",
+        "operationId": "getStatusChangeLogsTickets",
+        "parameters": [
+          {
+            "name": "requestType",
+            "in": "query",
+            "description": "Request type to filter for. If not specified, response will include all possible options",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FREEZE",
+                "UNFREEZE",
+                "CLOSE"
+              ]
+            }
+          },
+          {
+            "name": "resolutionStatus",
+            "in": "query",
+            "description": "Resolution status to filter for. If not specified, response will include all possible options",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "DECLINED"
+              ]
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Amount of records in a page (1-10, greater values are reduced to the top of the range)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page for all status change logs with MANUAL resolution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusChangePageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No record found for given cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/statuses": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Returns the list of all accounts belonging to user and their statuses",
+        "description": "REQUIRED ROLE [USER] - Returns complete list of all accounts assigned to user with their current status",
+        "operationId": "getStatuses",
+        "responses": {
+          "200": {
+            "description": "Statuses of all accounts belonging to user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountStatusResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Currently authenticated user is not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/status/{accountId}": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Returns status for selected account",
+        "description": "Returns status for requested account, if it belongs to currently authenticated user or request comes from account with an ADMIN role",
+        "operationId": "getStatus",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account for status check. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status of an account requested by user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ROLE [USER]: No account with given ID found for the user. ROLE [ADMIN]: No account with given ID found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/status-change-logs/{accountId}": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Returns lists of all status changes requested for selected account",
+        "description": "Returns a part of paginated response with given size (1-10, higher values will be reduced to the max of a range) consisting of status change requests for selected account. If next page exists, field \"cursor\" in response has a value that can be used as a starting point for next page if passed as \"cursor\" request parameter",
+        "operationId": "getStatusChangeLogs",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "description": "ID of an account for getting status change logs. Returned by \"/account/create\" or \"/account/statuses\"",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^ACC-\\d{8}$"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Amount of records in a page (1-10, greater values are reduced to the top of the range)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor pointing at the start of selected page. Omit to start from first page. Cursor for next page is returned by response (null if no next page)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of status change logs for selected account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusChangePageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationExceptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Failed authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ROLE [USER]: No account with given ID found for the user or no record found for given cursor. ROLE [ADMIN]: No account with given ID found or no record found for given cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TransferRequest": {
+        "type": "object",
+        "description": "Creates new outgoing transfer in a system from an ACTIVE account",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of funds to be transferred. Requires sender to have balance greater or equal than given amount, for initial balance use \"/account/claim-bonus\". Max 12 integer digits and 2 fraction digits",
+            "examples": [
+              100.5
+            ],
+            "exclusiveMinimum": 0
+          },
+          "receiver": {
+            "type": "string",
+            "description": "Account ID of receiver. Account has to exist in a system, have an ACTIVE status and be different then sender",
+            "examples": [
+              "ACC-12345678"
+            ],
+            "minLength": 1,
+            "pattern": "^ACC-\\d{8}$"
+          }
+        },
+        "required": [
+          "amount",
+          "receiver"
+        ]
+      },
+      "TransferResponse": {
+        "type": "object",
+        "description": "Description of successfully created transfer",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv4 identifying transfer"
+          },
+          "senderAccountId": {
+            "type": "string",
+            "description": "ID of an account sending funds"
+          },
+          "receiverAccountId": {
+            "type": "string",
+            "description": "ID of an account receiving funds"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount of funds sent in a transfer"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Transfer completed successfully"
+            ]
+          }
+        }
+      },
+      "ExceptionResponse": {
+        "type": "object",
+        "description": "Information about any non-validation error",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date of when exception happened (UTC time)"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP error code of an exception (4xx/5xx)"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "path": {
+            "type": "string",
+            "description": "URI path of a request that triggered exception"
+          }
+        }
+      },
+      "ValidationExceptionResponse": {
+        "type": "object",
+        "description": "Information about a validation error",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date of when exception happened (UTC time)"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP error code of an exception (4xx/5xx)"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "path": {
+            "type": "string",
+            "description": "URI path of a request that triggered exception"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "List of fields that validation did not pass on together with list of descriptions for not fulfilled requirements",
+            "examples": [
+              {
+                "username": [
+                  "Username can only consist of letters, numbers, dots, underscores and hyphens",
+                  "Username must be 3-30 characters"
+                ],
+                "password": [
+                  "Password must be 8-72 characters"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "description": "Registration form. After success you can authenticate with your credentials under \"auth/login\" endpoint",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Unique username consisting only of letters, numbers, dots, underscores and hyphens. Case insensitive.",
+            "examples": [
+              "Example_Username123"
+            ],
+            "maxLength": 30,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9._-]+$"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password that does not exceed 72 bytes",
+            "examples": [
+              "Example_Password456"
+            ],
+            "maxLength": 72,
+            "minLength": 8
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "RegisterResponse": {
+        "type": "object",
+        "description": "Informs of a successful registration",
+        "properties": {
+          "message": {
+            "type": "string",
+            "enum": [
+              "Account created successfully"
+            ]
+          }
+        }
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "description": "Informs of a successful logout",
+        "properties": {
+          "message": {
+            "type": "string",
+            "enum": [
+              "Logout successful"
+            ]
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "description": "Login form to an existing account. Account can be registered under \"auth/register\" endpoint",
+        "properties": {
+          "username": {
+            "type": "string",
+            "examples": [
+              "Example_Username123"
+            ],
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "examples": [
+              "Example_Password456"
+            ],
+            "minLength": 1
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "description": "Informs of a successful login",
+        "properties": {
+          "jwt": {
+            "type": "string",
+            "description": "JWT allowing for authentication using \"Authorization\" : \"bearer {token}\" header"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Login successful"
+            ]
+          }
+        }
+      },
+      "AccountStatusChangeResolutionRequest": {
+        "type": "object",
+        "description": "Resolution to a PENDING ticket requesting a status change on an account with MANUAL type resolution",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "UUIDv4 for pending request that is due for manual resolution. Valid UUID is required and one can be extracted from \"/admin/status-change-logs/tickets\" endpoint response.",
+            "examples": [
+              "12345678-1234-4123-8123-123456789abc"
+            ],
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "resolutionStatus": {
+            "type": "string",
+            "description": "Decision whether ticket is resolved as ACCEPTED or DECLINED. ACCEPTED ticket will automatically assign proper status to requesting account, DECLINED will result in no changes to status",
+            "enum": [
+              "ACCEPTED",
+              "DECLINED"
+            ],
+            "examples": [
+              "ACCEPTED"
+            ]
+          }
+        },
+        "required": [
+          "resolutionStatus",
+          "uuid"
+        ]
+      },
+      "AccountStatusChangeLogInfoDto": {
+        "type": "object",
+        "description": "Single log of account status change",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv4 identifying log. Best way to extract valid UUID for \"/admin/status-change-logs/ticket/resolve\" endpoint"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "ID of an account that status change was requested on"
+          },
+          "requestType": {
+            "type": "string",
+            "description": "Status change requested on an account",
+            "enum": [
+              "FREEZE",
+              "UNFREEZE",
+              "CLOSE"
+            ]
+          },
+          "requestedBy": {
+            "type": "string",
+            "description": "Tells whether request was done by account owner (USER) or an admin (ADMIN)",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason given for status change by requester. Can be null if none was given"
+          },
+          "requestDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when change was requested (UTC time)"
+          },
+          "resolutionType": {
+            "type": "string",
+            "description": "Tells whether request was made for automatic (AUTO) resolution or manual (MANUAL)",
+            "enum": [
+              "AUTO",
+              "MANUAL"
+            ]
+          },
+          "resolutionStatus": {
+            "type": "string",
+            "description": "Tells whether request was accepted, declined or is still pending resolution",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "DECLINED"
+            ]
+          },
+          "resolutionDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when request was resolved (UTC time). Null while pending"
+          }
+        }
+      },
+      "AccountCreateResponse": {
+        "type": "object",
+        "description": "Response informing of successful account creation",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "Account ID assigned to created account"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Account created successfully"
+            ]
+          }
+        }
+      },
+      "ClaimBonusResponse": {
+        "type": "object",
+        "description": "Informs if sign-in bonus was claimed just now, was claimed before or unavailable for user",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "ID of an account that bonus claim was attempted for"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Bonus claimed successfully",
+              "Your bonus was already claimed",
+              "Bonus is unavailable for this user"
+            ]
+          }
+        }
+      },
+      "AccountStatusChangeRequest": {
+        "type": "object",
+        "description": "Request for performing status change on an account",
+        "properties": {
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional reason for requesting a change",
+            "examples": [
+              "Security concern"
+            ],
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "statusChange": {
+            "type": "string",
+            "description": "Status transition desired for an account. FREEZE and CLOSE require ACTIVE account and are executed automatically with CLOSE additionally requiring a balance to be 0, UNFREEZE can be only done on FROZEN account and requires manual admin verification",
+            "enum": [
+              "FREEZE",
+              "UNFREEZE",
+              "CLOSE"
+            ],
+            "examples": [
+              "FREEZE"
+            ]
+          }
+        },
+        "required": [
+          "statusChange"
+        ]
+      },
+      "AccountStatusChangeResponse": {
+        "type": "object",
+        "description": "Confirms successful request of account status change. Does not mean that account change was necessarily done",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "ID of an account that change was requested on"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Account closed successfully",
+              "Account frozen successfully",
+              "Account unfrozen successfully",
+              "Account unfreeze request created"
+            ]
+          }
+        }
+      },
+      "TransferInfoDto": {
+        "type": "object",
+        "description": "Information about a single transaction",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUIDv4 identifying transfer"
+          },
+          "senderAccountId": {
+            "type": "string",
+            "description": "ID of an account sending funds"
+          },
+          "receiverAccountId": {
+            "type": "string",
+            "description": "ID of an account receiving funds"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount of funds sent in a transfer"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date when transfer was created (UTC time)"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of a transfer",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          }
+        }
+      },
+      "TransferPageResponse": {
+        "type": "object",
+        "description": "Page response of transfers",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Ordered list of data",
+            "items": {
+              "$ref": "#/components/schemas/TransferInfoDto"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "UUIDv4 pointer at the start of next page, used as cursor query parameter in next request. Cursor equal to null signifies this being a last available page"
+          }
+        }
+      },
+      "BalanceResponse": {
+        "type": "object",
+        "description": "Informs about current balance of selected account",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "ID of an account that this balance belongs to"
+          },
+          "balance": {
+            "type": "number",
+            "description": "Current account balance with 2 fraction digits"
+          }
+        }
+      },
+      "RefreshResponse": {
+        "type": "object",
+        "description": "Informs of a successful JWT refresh",
+        "properties": {
+          "jwt": {
+            "type": "string",
+            "description": "New JWT allowing for authentication using \"Authorization\" : \"bearer {token}\" header"
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "Refresh successful"
+            ]
+          }
+        }
+      },
+      "AccountStatusChangePageResponse": {
+        "type": "object",
+        "description": "Page response of account status change logs",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Ordered list of data",
+            "items": {
+              "$ref": "#/components/schemas/AccountStatusChangeLogInfoDto"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "UUIDv4 pointer at the start of next page, used as cursor query parameter in next request. Cursor equal to null signifies this being a last available page"
+          }
+        }
+      },
+      "AccountStatusResponse": {
+        "type": "object",
+        "description": "Informs about current status of an account",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "ID of an account"
+          },
+          "accountStatus": {
+            "type": "string",
+            "description": "Current status of an account",
+            "enum": [
+              "ACTIVE",
+              "FROZEN",
+              "CLOSED"
+            ]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "AuthJWT": {
+        "type": "http",
+        "description": "Validate your JWT from /auth/login",
+        "name": "AuthJWT",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
